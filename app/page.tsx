@@ -157,6 +157,8 @@ function rarityClass(rarity: Rarity) {
 }
 
 export default function Page() {
+  const [hydrated, setHydrated] = useState(false);
+
   const [assistant, setAssistant] = useState(assistantImages[0]);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [exams, setExams] = useState<Exam[]>(initialExams);
@@ -172,23 +174,49 @@ export default function Page() {
     setAssistant(
       assistantImages[Math.floor(Math.random() * assistantImages.length)]
     );
+
     setTasks(load<Task[]>(TASK_KEY, []));
     setExams(load<Exam[]>(EXAM_KEY, initialExams));
     setUnlockedRewardIds(load<string[]>(REWARD_KEY, []));
     setUnlockedAchievementIds(load<string[]>(ACHIEVEMENT_KEY, []));
     setSubjectStats(load<SubjectStats>(SUBJECT_KEY, {}));
     setHistory(load<History>(HISTORY_KEY, {}));
+
+    setHydrated(true);
   }, []);
 
-  useEffect(() => save(TASK_KEY, tasks), [tasks]);
-  useEffect(() => save(EXAM_KEY, exams), [exams]);
-  useEffect(() => save(REWARD_KEY, unlockedRewardIds), [unlockedRewardIds]);
-  useEffect(() => save(ACHIEVEMENT_KEY, unlockedAchievementIds), [unlockedAchievementIds]);
-  useEffect(() => save(SUBJECT_KEY, subjectStats), [subjectStats]);
-  useEffect(() => save(HISTORY_KEY, history), [history]);
+  useEffect(() => {
+    if (!hydrated) return;
+    save(TASK_KEY, tasks);
+  }, [hydrated, tasks]);
+
+  useEffect(() => {
+    if (!hydrated) return;
+    save(EXAM_KEY, exams);
+  }, [hydrated, exams]);
+
+  useEffect(() => {
+    if (!hydrated) return;
+    save(REWARD_KEY, unlockedRewardIds);
+  }, [hydrated, unlockedRewardIds]);
+
+  useEffect(() => {
+    if (!hydrated) return;
+    save(ACHIEVEMENT_KEY, unlockedAchievementIds);
+  }, [hydrated, unlockedAchievementIds]);
+
+  useEffect(() => {
+    if (!hydrated) return;
+    save(SUBJECT_KEY, subjectStats);
+  }, [hydrated, subjectStats]);
+
+  useEffect(() => {
+    if (!hydrated) return;
+    save(HISTORY_KEY, history);
+  }, [hydrated, history]);
 
   const doneTasks = tasks.filter((t) => t.done);
-  const totalMinutes = doneTasks.reduce((sum, t) => sum + t.minutes, 0);
+  const totalMinutes = doneTasks.reduce((sum, t) => sum + (t.minutes || 0), 0);
   const todayTasks = tasks.filter((t) => t.createdAt.slice(0, 10) === todayKey());
 
   const subjectProgress = useMemo(() => {
@@ -201,8 +229,8 @@ export default function Page() {
         map[subject] = { total: 0, done: 0 };
       }
 
-      map[subject].total += task.minutes;
-      if (task.done) map[subject].done += task.minutes;
+      map[subject].total += task.minutes || 0;
+      if (task.done) map[subject].done += task.minutes || 0;
     }
 
     return map;
@@ -222,6 +250,8 @@ export default function Page() {
   };
 
   useEffect(() => {
+    if (!hydrated) return;
+
     const newly = achievements.filter(
       (a) => !unlockedAchievementIds.includes(a.id) && a.condition(context)
     );
@@ -239,7 +269,7 @@ export default function Page() {
     ]);
 
     setNotice(newly[0]);
-  }, [tasks, subjectStats, history, unlockedAchievementIds]);
+  }, [hydrated, tasks, subjectStats, history, unlockedAchievementIds]);
 
   function addTask() {
     setTasks((prev) => [
@@ -258,11 +288,12 @@ export default function Page() {
   function applyStudyDiff(subject: string, day: string, diff: number) {
     if (diff === 0) return;
 
+    const subjectKey = subject || "未分類";
+
     setSubjectStats((prev) => {
       const next = { ...prev };
-      const key = subject || "未分類";
 
-      const old = next[key] ?? {
+      const old = next[subjectKey] ?? {
         exp: 0,
         level: 1,
         totalMinutes: 0,
@@ -272,7 +303,7 @@ export default function Page() {
       const newTotalMinutes = Math.max(0, old.totalMinutes + diff);
       const levelData = calcLevel(newExp);
 
-      next[key] = {
+      next[subjectKey] = {
         exp: newExp,
         level: levelData.level,
         totalMinutes: newTotalMinutes,
@@ -467,6 +498,7 @@ export default function Page() {
     setHistory(sampleHistory);
     setUnlockedAchievementIds(achievements.map((a) => a.id));
     setUnlockedRewardIds(rewards.map((r) => r.id));
+    setNotice(null);
   }
 
   function reorder(targetId: string) {
@@ -481,6 +513,7 @@ export default function Page() {
 
       const [item] = copy.splice(from, 1);
       copy.splice(to, 0, item);
+
       return copy;
     });
 
