@@ -167,6 +167,14 @@ export default function Page() {
   const [notice, setNotice] = useState<Achievement | null>(null);
   const [draggingId, setDraggingId] = useState<string | null>(null);
 
+  const [sampleConfirming, setSampleConfirming] = useState(false);
+  const [resetConfirming, setResetConfirming] = useState(false);
+
+  function clearConfirming() {
+    setSampleConfirming(false);
+    setResetConfirming(false);
+  }
+
   useEffect(() => {
     setAssistant(
       assistantImages[Math.floor(Math.random() * assistantImages.length)]
@@ -214,6 +222,7 @@ export default function Page() {
 
   const doneTasks = tasks.filter((t) => t.done);
   const totalMinutes = doneTasks.reduce((sum, t) => sum + (t.minutes || 0), 0);
+
   const context: AchievementContext = {
     totalMinutes,
     doneTaskCount: doneTasks.length,
@@ -245,6 +254,8 @@ export default function Page() {
   }, [hydrated, tasks, subjectStats, history, unlockedAchievementIds]);
 
   function addTask() {
+    clearConfirming();
+
     setTasks((prev) => [
       ...prev,
       {
@@ -292,6 +303,8 @@ export default function Page() {
   }
 
   function updateTask(id: string, patch: Partial<Task>) {
+    clearConfirming();
+
     const before = tasks.find((t) => t.id === id);
     if (!before) return;
 
@@ -318,6 +331,8 @@ export default function Page() {
   }
 
   function deleteTask(id: string) {
+    clearConfirming();
+
     const target = tasks.find((t) => t.id === id);
     if (!target) return;
 
@@ -332,6 +347,8 @@ export default function Page() {
   }
 
   function addExam() {
+    clearConfirming();
+
     setExams((prev) => [
       ...prev,
       {
@@ -343,6 +360,14 @@ export default function Page() {
   }
 
   function resetData() {
+    if (!resetConfirming) {
+      setResetConfirming(true);
+      setSampleConfirming(false);
+      return;
+    }
+
+    clearConfirming();
+
     localStorage.removeItem(TASK_KEY);
     localStorage.removeItem(EXAM_KEY);
     localStorage.removeItem(REWARD_KEY);
@@ -361,6 +386,14 @@ export default function Page() {
   }
 
   function sampleData() {
+    if (!sampleConfirming) {
+      setSampleConfirming(true);
+      setResetConfirming(false);
+      return;
+    }
+
+    clearConfirming();
+
     const now = new Date().toISOString();
     const today = todayKey();
 
@@ -475,6 +508,8 @@ export default function Page() {
   }
 
   function reorder(targetId: string) {
+    clearConfirming();
+
     if (!draggingId || draggingId === targetId) return;
 
     setTasks((prev) => {
@@ -508,9 +543,7 @@ export default function Page() {
             />
             <div className="p-4">
               <h1 className="text-xl font-bold">学習アシスタント</h1>
-              <p className="text-sm text-slate-500">
-                今日も頑張ろう❤
-              </p>
+              <p className="text-sm text-slate-500">今日も頑張ろう❤</p>
             </div>
           </section>
 
@@ -526,6 +559,21 @@ export default function Page() {
 
           <section className="rounded-3xl bg-white p-4 shadow">
             <h2 className="font-bold">開発用</h2>
+
+            {sampleConfirming && (
+              <div className="mt-3 rounded-2xl border border-orange-300 bg-orange-50 p-3 text-sm text-orange-800">
+                サンプルデータを投入すると、現在のデータがテスト用データに置き換わります。
+                実行する場合だけ、もう一度ボタンを押してください。
+              </div>
+            )}
+
+            {resetConfirming && (
+              <div className="mt-3 rounded-2xl border border-red-300 bg-red-50 p-3 text-sm text-red-800">
+                データ初期化を実行すると、タスク・試験・実績・ご褒美・学習履歴がすべて消えます。
+                実行する場合だけ、もう一度ボタンを押してください。
+              </div>
+            )}
+
             <div className="mt-3 grid gap-2">
               <button
                 onClick={addTask}
@@ -533,17 +581,23 @@ export default function Page() {
               >
                 タスク追加
               </button>
+
               <button
                 onClick={sampleData}
-                className="rounded-xl bg-blue-600 p-2 text-white"
+                className={`rounded-xl p-2 text-white ${
+                  sampleConfirming ? "bg-orange-600" : "bg-blue-600"
+                }`}
               >
-                サンプルデータ投入
+                {sampleConfirming ? "もう一度押すと投入" : "サンプルデータ投入"}
               </button>
+
               <button
                 onClick={resetData}
-                className="rounded-xl bg-red-500 p-2 text-white"
+                className={`rounded-xl p-2 text-white ${
+                  resetConfirming ? "bg-red-700" : "bg-red-500"
+                }`}
               >
-                データ初期化
+                {resetConfirming ? "もう一度押すと初期化" : "データ初期化"}
               </button>
             </div>
           </section>
@@ -571,6 +625,7 @@ export default function Page() {
                     placeholder="科目"
                     className="rounded-xl border p-2"
                   />
+
                   <input
                     value={task.title}
                     onChange={(e) =>
@@ -579,6 +634,7 @@ export default function Page() {
                     placeholder="タスク名"
                     className="rounded-xl border p-2"
                   />
+
                   <input
                     type="number"
                     value={task.minutes || ""}
@@ -590,6 +646,7 @@ export default function Page() {
                     placeholder="分"
                     className="rounded-xl border p-2"
                   />
+
                   <label className="flex items-center justify-center gap-2 text-sm">
                     <input
                       type="checkbox"
@@ -600,6 +657,7 @@ export default function Page() {
                     />
                     完了
                   </label>
+
                   <button
                     onClick={() => deleteTask(task.id)}
                     className="rounded-xl bg-slate-100 text-sm"
@@ -623,9 +681,11 @@ export default function Page() {
                       <b>{subject}</b>
                       <span>Lv {stat.level}</span>
                     </div>
+
                     <p className="mt-1 text-sm text-slate-500">
                       累計 {formatMinutes(stat.totalMinutes)}
                     </p>
+
                     <div className="mt-2 h-2 rounded-full bg-slate-100">
                       <div
                         className="h-2 rounded-full bg-blue-600"
@@ -637,6 +697,7 @@ export default function Page() {
                         }}
                       />
                     </div>
+
                     <p className="mt-1 text-xs text-slate-500">
                       EXP {lv.currentExp}/{lv.nextExp}
                     </p>
@@ -674,32 +735,32 @@ export default function Page() {
                   >
                     <input
                       value={exam.name}
-                      onChange={(e) =>
+                      onChange={(e) => {
+                        clearConfirming();
                         setExams((prev) =>
                           prev.map((x) =>
-                            x.id === exam.id
-                              ? { ...x, name: e.target.value }
-                              : x
+                            x.id === exam.id ? { ...x, name: e.target.value } : x
                           )
-                        )
-                      }
+                        );
+                      }}
                       placeholder="試験名"
                       className="rounded-xl border p-2"
                     />
+
                     <input
                       type="date"
                       value={exam.date}
-                      onChange={(e) =>
+                      onChange={(e) => {
+                        clearConfirming();
                         setExams((prev) =>
                           prev.map((x) =>
-                            x.id === exam.id
-                              ? { ...x, date: e.target.value }
-                              : x
+                            x.id === exam.id ? { ...x, date: e.target.value } : x
                           )
-                        )
-                      }
+                        );
+                      }}
                       className="rounded-xl border p-2"
                     />
+
                     <span
                       className={`rounded-xl p-2 text-center text-sm ${
                         days <= 7
@@ -711,12 +772,12 @@ export default function Page() {
                     >
                       あと{days}日
                     </span>
+
                     <button
-                      onClick={() =>
-                        setExams((prev) =>
-                          prev.filter((x) => x.id !== exam.id)
-                        )
-                      }
+                      onClick={() => {
+                        clearConfirming();
+                        setExams((prev) => prev.filter((x) => x.id !== exam.id));
+                      }}
                       className="rounded-xl bg-slate-100 text-sm"
                     >
                       削除
@@ -770,7 +831,10 @@ export default function Page() {
                 return (
                   <button
                     key={reward.id}
-                    onClick={() => unlocked && setSelectedReward(reward.src)}
+                    onClick={() => {
+                      clearConfirming();
+                      if (unlocked) setSelectedReward(reward.src);
+                    }}
                     className="aspect-square overflow-hidden rounded-2xl border bg-slate-100"
                   >
                     {unlocked ? (
@@ -844,9 +908,7 @@ export default function Page() {
             </p>
             <h2 className="mt-2 text-2xl font-black">{notice.title}</h2>
             <p className="mt-2 text-slate-500">{notice.description}</p>
-            <p className="mt-4 text-sm font-bold">
-              {notice.rewardId} 解放！
-            </p>
+            <p className="mt-4 text-sm font-bold">{notice.rewardId} 解放！</p>
             <button
               onClick={() => setNotice(null)}
               className="mt-5 rounded-xl bg-slate-900 px-5 py-2 text-white"
