@@ -61,8 +61,8 @@ const assistantImages = [
   "/assistants/assistant05.png",
   "/assistants/assistant06.png",
   "/assistants/assistant07.png",
-  "/assistants/assistant08.png", 
-  ];
+  "/assistants/assistant08.png",
+];
 
 const initialExams: Exam[] = [];
 
@@ -75,7 +75,6 @@ const rewards = Array.from({ length: 20 }, (_, i) => {
 });
 
 const achievements: Achievement[] = [
-  // N
   { id: "first-study", title: "はじめの一歩", description: "初めてタスクを完了", rarity: "N", rewardId: "reward01", condition: (c) => c.doneTaskCount >= 1 },
   { id: "study-30", title: "ウォームアップ", description: "累計30分勉強", rarity: "N", rewardId: "reward02", condition: (c) => c.totalMinutes >= 30 },
   { id: "study-60", title: "集中モード", description: "累計60分勉強", rarity: "N", rewardId: "reward03", condition: (c) => c.totalMinutes >= 60 },
@@ -83,7 +82,6 @@ const achievements: Achievement[] = [
   { id: "task-3", title: "三つ片付けた", description: "3タスク完了", rarity: "N", rewardId: "reward05", condition: (c) => c.doneTaskCount >= 3 },
   { id: "subject-1", title: "専門家の卵", description: "1科目を学習", rarity: "N", rewardId: "reward06", condition: (c) => c.subjectCount >= 1 },
 
-  // R
   { id: "study-180", title: "今日けっこう強い", description: "累計180分勉強", rarity: "R", rewardId: "reward07", condition: (c) => c.totalMinutes >= 180 },
   { id: "study-300", title: "勉強戦士", description: "累計300分勉強", rarity: "R", rewardId: "reward08", condition: (c) => c.totalMinutes >= 300 },
   { id: "study-600", title: "10時間突破", description: "累計10時間勉強", rarity: "R", rewardId: "reward09", condition: (c) => c.totalMinutes >= 600 },
@@ -94,7 +92,6 @@ const achievements: Achievement[] = [
   { id: "level-3", title: "育ってきた", description: "いずれかの科目Lv3到達", rarity: "R", rewardId: "reward14", condition: (c) => Object.values(c.subjectStats).some((s) => s.level >= 3) },
   { id: "level-5", title: "得意科目の芽", description: "いずれかの科目Lv5到達", rarity: "R", rewardId: "reward15", condition: (c) => Object.values(c.subjectStats).some((s) => s.level >= 5) },
 
-  // SR
   { id: "study-1800", title: "積み上げる者", description: "累計30時間勉強", rarity: "SR", rewardId: "reward16", condition: (c) => c.totalMinutes >= 1800 },
   { id: "study-3000", title: "50時間の壁", description: "累計50時間勉強", rarity: "SR", rewardId: "reward17", condition: (c) => c.totalMinutes >= 3000 },
   { id: "task-30", title: "習慣の気配", description: "30タスク完了", rarity: "SR", rewardId: "reward18", condition: (c) => c.doneTaskCount >= 30 },
@@ -114,6 +111,7 @@ function load<T>(key: string, fallback: T): T {
   if (typeof window === "undefined") return fallback;
   const raw = localStorage.getItem(key);
   if (!raw) return fallback;
+
   try {
     return JSON.parse(raw) as T;
   } catch {
@@ -141,6 +139,7 @@ function calcLevel(exp: number) {
   }
 
   const prevNeed = need - Math.floor(100 * Math.pow(level, 1.25));
+
   return {
     level,
     currentExp: exp - prevNeed,
@@ -162,9 +161,7 @@ export default function Page() {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [exams, setExams] = useState<Exam[]>(initialExams);
   const [unlockedRewardIds, setUnlockedRewardIds] = useState<string[]>([]);
-  const [unlockedAchievementIds, setUnlockedAchievementIds] = useState<string[]>(
-    []
-  );
+  const [unlockedAchievementIds, setUnlockedAchievementIds] = useState<string[]>([]);
   const [subjectStats, setSubjectStats] = useState<SubjectStats>({});
   const [history, setHistory] = useState<History>({});
   const [selectedReward, setSelectedReward] = useState<string | null>(null);
@@ -186,28 +183,26 @@ export default function Page() {
   useEffect(() => save(TASK_KEY, tasks), [tasks]);
   useEffect(() => save(EXAM_KEY, exams), [exams]);
   useEffect(() => save(REWARD_KEY, unlockedRewardIds), [unlockedRewardIds]);
-  useEffect(
-    () => save(ACHIEVEMENT_KEY, unlockedAchievementIds),
-    [unlockedAchievementIds]
-  );
+  useEffect(() => save(ACHIEVEMENT_KEY, unlockedAchievementIds), [unlockedAchievementIds]);
   useEffect(() => save(SUBJECT_KEY, subjectStats), [subjectStats]);
   useEffect(() => save(HISTORY_KEY, history), [history]);
 
   const doneTasks = tasks.filter((t) => t.done);
   const totalMinutes = doneTasks.reduce((sum, t) => sum + t.minutes, 0);
-
   const todayTasks = tasks.filter((t) => t.createdAt.slice(0, 10) === todayKey());
 
   const subjectProgress = useMemo(() => {
     const map: Record<string, { total: number; done: number }> = {};
 
     for (const task of todayTasks) {
-      if (!map[task.subject]) {
-        map[task.subject] = { total: 0, done: 0 };
+      const subject = task.subject || "未分類";
+
+      if (!map[subject]) {
+        map[subject] = { total: 0, done: 0 };
       }
 
-      map[task.subject].total += task.minutes;
-      if (task.done) map[task.subject].done += task.minutes;
+      map[subject].total += task.minutes;
+      if (task.done) map[subject].done += task.minutes;
     }
 
     return map;
@@ -220,25 +215,31 @@ export default function Page() {
   const context: AchievementContext = {
     totalMinutes,
     doneTaskCount: doneTasks.length,
-    subjectCount: new Set(doneTasks.map((t) => t.subject)).size,
+    subjectCount: new Set(doneTasks.map((t) => t.subject || "未分類")).size,
     allTodaySubjectsPerfect,
     subjectStats,
     history,
   };
 
   useEffect(() => {
-    const newly = achievements.find(
+    const newly = achievements.filter(
       (a) => !unlockedAchievementIds.includes(a.id) && a.condition(context)
     );
 
-    if (!newly) return;
+    if (newly.length === 0) return;
 
-    setUnlockedAchievementIds((prev) => [...prev, newly.id]);
-    setUnlockedRewardIds((prev) =>
-      prev.includes(newly.rewardId) ? prev : [...prev, newly.rewardId]
-    );
-    setNotice(newly);
-  }, [tasks, subjectStats, history]);
+    setUnlockedAchievementIds((prev) => [
+      ...prev,
+      ...newly.map((a) => a.id).filter((id) => !prev.includes(id)),
+    ]);
+
+    setUnlockedRewardIds((prev) => [
+      ...prev,
+      ...newly.map((a) => a.rewardId).filter((id) => !prev.includes(id)),
+    ]);
+
+    setNotice(newly[0]);
+  }, [tasks, subjectStats, history, unlockedAchievementIds]);
 
   function addTask() {
     setTasks((prev) => [
@@ -254,32 +255,14 @@ export default function Page() {
     ]);
   }
 
-function updateTask(id: string, patch: Partial<Task>) {
-  const before = tasks.find((t) => t.id === id);
-  if (!before) return;
+  function applyStudyDiff(subject: string, day: string, diff: number) {
+    if (diff === 0) return;
 
-  const after = { ...before, ...patch };
+    setSubjectStats((prev) => {
+      const next = { ...prev };
+      const key = subject || "未分類";
 
-  setTasks((prev) => prev.map((t) => (t.id === id ? after : t)));
-
-  const beforeSubject = before.subject || "未分類";
-  const afterSubject = after.subject || "未分類";
-
-  const beforeMinutes = before.done ? before.minutes || 0 : 0;
-  const afterMinutes = after.done ? after.minutes || 0 : 0;
-
-  const subjectDiffs: Record<string, number> = {};
-
-  subjectDiffs[beforeSubject] = (subjectDiffs[beforeSubject] ?? 0) - beforeMinutes;
-  subjectDiffs[afterSubject] = (subjectDiffs[afterSubject] ?? 0) + afterMinutes;
-
-  setSubjectStats((prev) => {
-    const next = { ...prev };
-
-    for (const [subject, diff] of Object.entries(subjectDiffs)) {
-      if (diff === 0) continue;
-
-      const old = next[subject] ?? {
+      const old = next[key] ?? {
         exp: 0,
         level: 1,
         totalMinutes: 0,
@@ -289,30 +272,58 @@ function updateTask(id: string, patch: Partial<Task>) {
       const newTotalMinutes = Math.max(0, old.totalMinutes + diff);
       const levelData = calcLevel(newExp);
 
-      next[subject] = {
+      next[key] = {
         exp: newExp,
         level: levelData.level,
         totalMinutes: newTotalMinutes,
       };
+
+      return next;
+    });
+
+    setHistory((prev) => ({
+      ...prev,
+      [day]: Math.max(0, (prev[day] ?? 0) + diff),
+    }));
+  }
+
+  function updateTask(id: string, patch: Partial<Task>) {
+    const before = tasks.find((t) => t.id === id);
+    if (!before) return;
+
+    const after = { ...before, ...patch };
+
+    setTasks((prev) => prev.map((t) => (t.id === id ? after : t)));
+
+    const beforeSubject = before.subject || "未分類";
+    const afterSubject = after.subject || "未分類";
+
+    const beforeMinutes = before.done ? before.minutes || 0 : 0;
+    const afterMinutes = after.done ? after.minutes || 0 : 0;
+
+    const beforeDay = before.createdAt.slice(0, 10);
+    const afterDay = after.createdAt.slice(0, 10);
+
+    if (beforeSubject === afterSubject && beforeDay === afterDay) {
+      applyStudyDiff(afterSubject, afterDay, afterMinutes - beforeMinutes);
+      return;
     }
 
-    return next;
-  });
-
-  const beforeDay = before.createdAt.slice(0, 10);
-  const afterDay = after.createdAt.slice(0, 10);
-
-  setHistory((prev) => {
-    const next = { ...prev };
-
-    next[beforeDay] = Math.max(0, (next[beforeDay] ?? 0) - beforeMinutes);
-    next[afterDay] = Math.max(0, (next[afterDay] ?? 0) + afterMinutes);
-
-    return next;
-  });
-}
+    applyStudyDiff(beforeSubject, beforeDay, -beforeMinutes);
+    applyStudyDiff(afterSubject, afterDay, afterMinutes);
+  }
 
   function deleteTask(id: string) {
+    const target = tasks.find((t) => t.id === id);
+    if (!target) return;
+
+    if (target.done) {
+      const subject = target.subject || "未分類";
+      const day = target.createdAt.slice(0, 10);
+      const minutes = target.minutes || 0;
+      applyStudyDiff(subject, day, -minutes);
+    }
+
     setTasks((prev) => prev.filter((t) => t.id !== id));
   }
 
@@ -341,121 +352,122 @@ function updateTask(id: string, patch: Partial<Task>) {
     setUnlockedAchievementIds([]);
     setSubjectStats({});
     setHistory({});
+    setNotice(null);
+    setSelectedReward(null);
   }
 
- function sampleData() {
-  const now = new Date().toISOString();
-  const today = todayKey();
+  function sampleData() {
+    const now = new Date().toISOString();
+    const today = todayKey();
 
-  const sampleTasks: Task[] = [
-    {
-      id: uid(),
-      subject: "数学",
-      title: "数検1級 過去問",
-      minutes: 12000,
-      done: true,
-      createdAt: now,
-    },
-    {
-      id: uid(),
-      subject: "英語",
-      title: "東大英語 長文",
-      minutes: 800,
-      done: true,
-      createdAt: now,
-    },
-    {
-      id: uid(),
-      subject: "化学",
-      title: "有機化学 復習",
-      minutes: 800,
-      done: true,
-      createdAt: now,
-    },
-    {
-      id: uid(),
-      subject: "世界史",
-      title: "通史復習",
-      minutes: 500,
-      done: true,
-      createdAt: now,
-    },
-    {
-      id: uid(),
-      subject: "色彩",
-      title: "UC級 復習",
-      minutes: 500,
-      done: true,
-      createdAt: now,
-    },
-    {
-      id: uid(),
-      subject: "危険物",
-      title: "乙種 暗記",
-      minutes: 500,
-      done: true,
-      createdAt: now,
-    },
-  ];
+    const sampleTasks: Task[] = [
+      {
+        id: uid(),
+        subject: "数学",
+        title: "数検1級 過去問",
+        minutes: 12000,
+        done: true,
+        createdAt: now,
+      },
+      {
+        id: uid(),
+        subject: "英語",
+        title: "東大英語 長文",
+        minutes: 800,
+        done: true,
+        createdAt: now,
+      },
+      {
+        id: uid(),
+        subject: "化学",
+        title: "有機化学 復習",
+        minutes: 800,
+        done: true,
+        createdAt: now,
+      },
+      {
+        id: uid(),
+        subject: "世界史",
+        title: "通史復習",
+        minutes: 500,
+        done: true,
+        createdAt: now,
+      },
+      {
+        id: uid(),
+        subject: "色彩",
+        title: "UC級 復習",
+        minutes: 500,
+        done: true,
+        createdAt: now,
+      },
+      {
+        id: uid(),
+        subject: "危険物",
+        title: "乙種 暗記",
+        minutes: 500,
+        done: true,
+        createdAt: now,
+      },
+    ];
 
-  const sampleSubjectStats: SubjectStats = {
-    数学: {
-      exp: 12000,
-      level: calcLevel(12000).level,
-      totalMinutes: 12000,
-    },
-    英語: {
-      exp: 800,
-      level: calcLevel(800).level,
-      totalMinutes: 800,
-    },
-    化学: {
-      exp: 800,
-      level: calcLevel(800).level,
-      totalMinutes: 800,
-    },
-    世界史: {
-      exp: 500,
-      level: calcLevel(500).level,
-      totalMinutes: 500,
-    },
-    色彩: {
-      exp: 500,
-      level: calcLevel(500).level,
-      totalMinutes: 500,
-    },
-    危険物: {
-      exp: 500,
-      level: calcLevel(500).level,
-      totalMinutes: 500,
-    },
-  };
+    const sampleSubjectStats: SubjectStats = {
+      数学: {
+        exp: 12000,
+        level: calcLevel(12000).level,
+        totalMinutes: 12000,
+      },
+      英語: {
+        exp: 800,
+        level: calcLevel(800).level,
+        totalMinutes: 800,
+      },
+      化学: {
+        exp: 800,
+        level: calcLevel(800).level,
+        totalMinutes: 800,
+      },
+      世界史: {
+        exp: 500,
+        level: calcLevel(500).level,
+        totalMinutes: 500,
+      },
+      色彩: {
+        exp: 500,
+        level: calcLevel(500).level,
+        totalMinutes: 500,
+      },
+      危険物: {
+        exp: 500,
+        level: calcLevel(500).level,
+        totalMinutes: 500,
+      },
+    };
 
-  const sampleHistory: History = {
-    [today]: 15100,
-  };
+    const sampleHistory: History = {
+      [today]: 15100,
+    };
 
-  setTasks(sampleTasks);
+    setTasks(sampleTasks);
 
-  setExams([
-    {
-      id: uid(),
-      name: "数検1級一次",
-      date: "2026-10-25",
-    },
-    {
-      id: uid(),
-      name: "TOEIC",
-      date: "2026-12-07",
-    },
-  ]);
+    setExams([
+      {
+        id: uid(),
+        name: "数検1級一次",
+        date: "2026-10-25",
+      },
+      {
+        id: uid(),
+        name: "TOEIC",
+        date: "2026-12-07",
+      },
+    ]);
 
-  setSubjectStats(sampleSubjectStats);
-  setHistory(sampleHistory);
-
-  setUnlockedAchievementIds(achievements.map((a) => a.id));
-  setUnlockedRewardIds(rewards.map((r) => r.id));
-}
+    setSubjectStats(sampleSubjectStats);
+    setHistory(sampleHistory);
+    setUnlockedAchievementIds(achievements.map((a) => a.id));
+    setUnlockedRewardIds(rewards.map((r) => r.id));
+  }
 
   function reorder(targetId: string) {
     if (!draggingId || draggingId === targetId) return;
@@ -464,6 +476,9 @@ function updateTask(id: string, patch: Partial<Task>) {
       const copy = [...prev];
       const from = copy.findIndex((t) => t.id === draggingId);
       const to = copy.findIndex((t) => t.id === targetId);
+
+      if (from === -1 || to === -1) return prev;
+
       const [item] = copy.splice(from, 1);
       copy.splice(to, 0, item);
       return copy;
@@ -506,13 +521,22 @@ function updateTask(id: string, patch: Partial<Task>) {
           <section className="rounded-3xl bg-white p-4 shadow">
             <h2 className="font-bold">開発用</h2>
             <div className="mt-3 grid gap-2">
-              <button onClick={addTask} className="rounded-xl bg-slate-900 p-2 text-white">
+              <button
+                onClick={addTask}
+                className="rounded-xl bg-slate-900 p-2 text-white"
+              >
                 タスク追加
               </button>
-              <button onClick={sampleData} className="rounded-xl bg-blue-600 p-2 text-white">
+              <button
+                onClick={sampleData}
+                className="rounded-xl bg-blue-600 p-2 text-white"
+              >
                 サンプルデータ投入
               </button>
-              <button onClick={resetData} className="rounded-xl bg-red-500 p-2 text-white">
+              <button
+                onClick={resetData}
+                className="rounded-xl bg-red-500 p-2 text-white"
+              >
                 データ初期化
               </button>
             </div>
@@ -587,7 +611,9 @@ function updateTask(id: string, patch: Partial<Task>) {
               <div className="mt-4 space-y-4">
                 {Object.entries(subjectProgress).map(([subject, data]) => {
                   const percent =
-                    data.total === 0 ? 0 : Math.round((data.done / data.total) * 100);
+                    data.total === 0
+                      ? 0
+                      : Math.round((data.done / data.total) * 100);
 
                   return (
                     <div key={subject}>
@@ -648,7 +674,10 @@ function updateTask(id: string, patch: Partial<Task>) {
           <section className="rounded-3xl bg-white p-5 shadow">
             <div className="mb-4 flex items-center justify-between">
               <h2 className="text-xl font-bold">試験</h2>
-              <button onClick={addExam} className="rounded-xl bg-slate-900 px-3 py-2 text-white">
+              <button
+                onClick={addExam}
+                className="rounded-xl bg-slate-900 px-3 py-2 text-white"
+              >
                 試験追加
               </button>
             </div>
@@ -673,7 +702,9 @@ function updateTask(id: string, patch: Partial<Task>) {
                       onChange={(e) =>
                         setExams((prev) =>
                           prev.map((x) =>
-                            x.id === exam.id ? { ...x, name: e.target.value } : x
+                            x.id === exam.id
+                              ? { ...x, name: e.target.value }
+                              : x
                           )
                         )
                       }
@@ -686,7 +717,9 @@ function updateTask(id: string, patch: Partial<Task>) {
                       onChange={(e) =>
                         setExams((prev) =>
                           prev.map((x) =>
-                            x.id === exam.id ? { ...x, date: e.target.value } : x
+                            x.id === exam.id
+                              ? { ...x, date: e.target.value }
+                              : x
                           )
                         )
                       }
@@ -705,7 +738,9 @@ function updateTask(id: string, patch: Partial<Task>) {
                     </span>
                     <button
                       onClick={() =>
-                        setExams((prev) => prev.filter((x) => x.id !== exam.id))
+                        setExams((prev) =>
+                          prev.filter((x) => x.id !== exam.id)
+                        )
                       }
                       className="rounded-xl bg-slate-100 text-sm"
                     >
@@ -764,7 +799,11 @@ function updateTask(id: string, patch: Partial<Task>) {
                     className="aspect-square overflow-hidden rounded-2xl border bg-slate-100"
                   >
                     {unlocked ? (
-                      <img src={reward.src} alt={reward.id} className="h-full w-full object-cover" />
+                      <img
+                        src={reward.src}
+                        alt={reward.id}
+                        className="h-full w-full object-cover"
+                      />
                     ) : (
                       <span className="flex h-full items-center justify-center text-2xl text-slate-400">
                         ?
