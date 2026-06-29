@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 
 type Task = {
   id: string;
@@ -41,7 +41,6 @@ type AchievementContext = {
   totalMinutes: number;
   doneTaskCount: number;
   subjectCount: number;
-  allTodaySubjectsPerfect: boolean;
   subjectStats: SubjectStats;
   history: History;
 };
@@ -215,34 +214,10 @@ export default function Page() {
 
   const doneTasks = tasks.filter((t) => t.done);
   const totalMinutes = doneTasks.reduce((sum, t) => sum + (t.minutes || 0), 0);
-  const todayTasks = tasks.filter((t) => t.createdAt.slice(0, 10) === todayKey());
-
-  const subjectProgress = useMemo(() => {
-    const map: Record<string, { total: number; done: number }> = {};
-
-    for (const task of todayTasks) {
-      const subject = task.subject || "未分類";
-
-      if (!map[subject]) {
-        map[subject] = { total: 0, done: 0 };
-      }
-
-      map[subject].total += task.minutes || 0;
-      if (task.done) map[subject].done += task.minutes || 0;
-    }
-
-    return map;
-  }, [todayTasks]);
-
-  const allTodaySubjectsPerfect =
-    Object.keys(subjectProgress).length > 0 &&
-    Object.values(subjectProgress).every((s) => s.total > 0 && s.done === s.total);
-
   const context: AchievementContext = {
     totalMinutes,
     doneTaskCount: doneTasks.length,
     subjectCount: new Set(doneTasks.map((t) => t.subject || "未分類")).size,
-    allTodaySubjectsPerfect,
     subjectStats,
     history,
   };
@@ -636,69 +611,38 @@ export default function Page() {
             </div>
           </section>
 
-          <section className="grid gap-6 md:grid-cols-2">
-            <div className="rounded-3xl bg-white p-5 shadow">
-              <h2 className="text-xl font-bold">今日の科目別進捗</h2>
-              <div className="mt-4 space-y-4">
-                {Object.entries(subjectProgress).map(([subject, data]) => {
-                  const percent =
-                    data.total === 0
-                      ? 0
-                      : Math.round((data.done / data.total) * 100);
+          <section className="rounded-3xl bg-white p-5 shadow">
+            <h2 className="text-xl font-bold">科目Lv</h2>
+            <div className="mt-4 grid gap-3 md:grid-cols-2">
+              {Object.entries(subjectStats).map(([subject, stat]) => {
+                const lv = calcLevel(stat.exp);
 
-                  return (
-                    <div key={subject}>
-                      <div className="mb-1 flex justify-between text-sm">
-                        <span className="font-bold">{subject}</span>
-                        <span>
-                          {data.done}/{data.total}分 {percent}%
-                        </span>
-                      </div>
-                      <div className="h-3 rounded-full bg-slate-100">
-                        <div
-                          className="h-3 rounded-full bg-slate-900"
-                          style={{ width: `${percent}%` }}
-                        />
-                      </div>
+                return (
+                  <div key={subject} className="rounded-2xl border p-3">
+                    <div className="flex justify-between">
+                      <b>{subject}</b>
+                      <span>Lv {stat.level}</span>
                     </div>
-                  );
-                })}
-              </div>
-            </div>
-
-            <div className="rounded-3xl bg-white p-5 shadow">
-              <h2 className="text-xl font-bold">科目Lv</h2>
-              <div className="mt-4 space-y-3">
-                {Object.entries(subjectStats).map(([subject, stat]) => {
-                  const lv = calcLevel(stat.exp);
-
-                  return (
-                    <div key={subject} className="rounded-2xl border p-3">
-                      <div className="flex justify-between">
-                        <b>{subject}</b>
-                        <span>Lv {stat.level}</span>
-                      </div>
-                      <p className="mt-1 text-sm text-slate-500">
-                        累計 {formatMinutes(stat.totalMinutes)}
-                      </p>
-                      <div className="mt-2 h-2 rounded-full bg-slate-100">
-                        <div
-                          className="h-2 rounded-full bg-blue-600"
-                          style={{
-                            width: `${Math.min(
-                              100,
-                              (lv.currentExp / lv.nextExp) * 100
-                            )}%`,
-                          }}
-                        />
-                      </div>
-                      <p className="mt-1 text-xs text-slate-500">
-                        EXP {lv.currentExp}/{lv.nextExp}
-                      </p>
+                    <p className="mt-1 text-sm text-slate-500">
+                      累計 {formatMinutes(stat.totalMinutes)}
+                    </p>
+                    <div className="mt-2 h-2 rounded-full bg-slate-100">
+                      <div
+                        className="h-2 rounded-full bg-blue-600"
+                        style={{
+                          width: `${Math.min(
+                            100,
+                            (lv.currentExp / lv.nextExp) * 100
+                          )}%`,
+                        }}
+                      />
                     </div>
-                  );
-                })}
-              </div>
+                    <p className="mt-1 text-xs text-slate-500">
+                      EXP {lv.currentExp}/{lv.nextExp}
+                    </p>
+                  </div>
+                );
+              })}
             </div>
           </section>
 
