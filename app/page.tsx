@@ -60,8 +60,6 @@ const assistantImages = [
   "/assistants/assistant04.png",
   "/assistants/assistant05.png",
   "/assistants/assistant06.png",
-  "/assistants/assistant07.png",
-  "/assistants/assistant08.png",
 ];
 
 const initialExams: Exam[] = [];
