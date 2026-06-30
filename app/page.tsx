@@ -212,6 +212,14 @@ const achievements: Achievement[] = [
     rewardSrc: "/rewards/study-3000.png",
     condition: (c) => c.totalMinutes >= 3000,
   },
+   {
+    id: "task-20",
+    title: "習慣の芽生え",
+    description: "20タスク完了",
+    rarity: "SR",
+    rewardSrc: "/rewards/task-20.png",
+    condition: (c) => c.doneTaskCount >= 20,
+  },
   {
     id: "task-30",
     title: "習慣の気配",
