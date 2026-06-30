@@ -24,7 +24,7 @@ type Achievement = {
   title: string;
   description: string;
   rarity: Rarity;
-  rewardId: string;
+  rewardSrc: string;
   condition: (ctx: AchievementContext) => boolean;
 };
 
@@ -66,38 +66,176 @@ const assistantImages = [
 
 const initialExams: Exam[] = [];
 
-const rewards = Array.from({ length: 20 }, (_, i) => {
-  const n = String(i + 1).padStart(2, "0");
-  return {
-    id: `reward${n}`,
-    src: `/rewards/reward${n}.png`,
-  };
-});
-
 const achievements: Achievement[] = [
-  { id: "first-study", title: "はじめの一歩", description: "初めてタスクを完了", rarity: "N", rewardId: "reward01", condition: (c) => c.doneTaskCount >= 1 },
-  { id: "study-30", title: "ウォームアップ", description: "累計30分勉強", rarity: "N", rewardId: "reward02", condition: (c) => c.totalMinutes >= 30 },
-  { id: "study-60", title: "集中モード", description: "累計60分勉強", rarity: "N", rewardId: "reward03", condition: (c) => c.totalMinutes >= 60 },
-  { id: "study-120", title: "助走完了", description: "累計120分勉強", rarity: "N", rewardId: "reward04", condition: (c) => c.totalMinutes >= 120 },
-  { id: "task-3", title: "三つ片付けた", description: "3タスク完了", rarity: "N", rewardId: "reward05", condition: (c) => c.doneTaskCount >= 3 },
-  { id: "subject-1", title: "専門家の卵", description: "1科目を学習", rarity: "N", rewardId: "reward06", condition: (c) => c.subjectCount >= 1 },
+  {
+    id: "first-study",
+    title: "はじめの一歩",
+    description: "初めてタスクを完了",
+    rarity: "N",
+    rewardSrc: "/rewards/first-study.png",
+    condition: (c) => c.doneTaskCount >= 1,
+  },
+  {
+    id: "study-30",
+    title: "ウォームアップ",
+    description: "累計30分勉強",
+    rarity: "N",
+    rewardSrc: "/rewards/study-30.png",
+    condition: (c) => c.totalMinutes >= 30,
+  },
+  {
+    id: "study-60",
+    title: "集中モード",
+    description: "累計60分勉強",
+    rarity: "N",
+    rewardSrc: "/rewards/study-60.png",
+    condition: (c) => c.totalMinutes >= 60,
+  },
+  {
+    id: "study-120",
+    title: "助走完了",
+    description: "累計120分勉強",
+    rarity: "N",
+    rewardSrc: "/rewards/study-120.png",
+    condition: (c) => c.totalMinutes >= 120,
+  },
+  {
+    id: "task-3",
+    title: "三つ片付けた",
+    description: "3タスク完了",
+    rarity: "N",
+    rewardSrc: "/rewards/task-3.png",
+    condition: (c) => c.doneTaskCount >= 3,
+  },
+  {
+    id: "subject-1",
+    title: "専門家の卵",
+    description: "1科目を学習",
+    rarity: "N",
+    rewardSrc: "/rewards/subject-1.png",
+    condition: (c) => c.subjectCount >= 1,
+  },
 
-  { id: "study-180", title: "今日けっこう強い", description: "累計180分勉強", rarity: "R", rewardId: "reward07", condition: (c) => c.totalMinutes >= 180 },
-  { id: "study-300", title: "勉強戦士", description: "累計300分勉強", rarity: "R", rewardId: "reward08", condition: (c) => c.totalMinutes >= 300 },
-  { id: "study-600", title: "10時間突破", description: "累計10時間勉強", rarity: "R", rewardId: "reward09", condition: (c) => c.totalMinutes >= 600 },
-  { id: "task-5", title: "タスク処理班", description: "5タスク完了", rarity: "R", rewardId: "reward10", condition: (c) => c.doneTaskCount >= 5 },
-  { id: "task-10", title: "小さな山を越えた", description: "10タスク完了", rarity: "R", rewardId: "reward11", condition: (c) => c.doneTaskCount >= 10 },
-  { id: "subject-2", title: "二刀流", description: "2科目以上学習", rarity: "R", rewardId: "reward12", condition: (c) => c.subjectCount >= 2 },
-  { id: "subject-3", title: "三刀流", description: "3科目以上学習", rarity: "R", rewardId: "reward13", condition: (c) => c.subjectCount >= 3 },
-  { id: "level-3", title: "育ってきた", description: "いずれかの科目Lv3到達", rarity: "R", rewardId: "reward14", condition: (c) => Object.values(c.subjectStats).some((s) => s.level >= 3) },
-  { id: "level-5", title: "得意科目の芽", description: "いずれかの科目Lv5到達", rarity: "R", rewardId: "reward15", condition: (c) => Object.values(c.subjectStats).some((s) => s.level >= 5) },
+  {
+    id: "study-180",
+    title: "今日けっこう強い",
+    description: "累計180分勉強",
+    rarity: "R",
+    rewardSrc: "/rewards/study-180.png",
+    condition: (c) => c.totalMinutes >= 180,
+  },
+  {
+    id: "study-300",
+    title: "勉強戦士",
+    description: "累計300分勉強",
+    rarity: "R",
+    rewardSrc: "/rewards/study-300.png",
+    condition: (c) => c.totalMinutes >= 300,
+  },
+  {
+    id: "study-600",
+    title: "10時間突破",
+    description: "累計10時間勉強",
+    rarity: "R",
+    rewardSrc: "/rewards/study-600.png",
+    condition: (c) => c.totalMinutes >= 600,
+  },
+  {
+    id: "task-5",
+    title: "タスク処理班",
+    description: "5タスク完了",
+    rarity: "R",
+    rewardSrc: "/rewards/task-5.png",
+    condition: (c) => c.doneTaskCount >= 5,
+  },
+  {
+    id: "task-10",
+    title: "小さな山を越えた",
+    description: "10タスク完了",
+    rarity: "R",
+    rewardSrc: "/rewards/task-10.png",
+    condition: (c) => c.doneTaskCount >= 10,
+  },
+  {
+    id: "subject-2",
+    title: "二刀流",
+    description: "2科目以上学習",
+    rarity: "R",
+    rewardSrc: "/rewards/subject-2.png",
+    condition: (c) => c.subjectCount >= 2,
+  },
+  {
+    id: "subject-3",
+    title: "三刀流",
+    description: "3科目以上学習",
+    rarity: "R",
+    rewardSrc: "/rewards/subject-3.png",
+    condition: (c) => c.subjectCount >= 3,
+  },
+  {
+    id: "level-3",
+    title: "育ってきた",
+    description: "いずれかの科目Lv3到達",
+    rarity: "R",
+    rewardSrc: "/rewards/level-3.png",
+    condition: (c) => Object.values(c.subjectStats).some((s) => s.level >= 3),
+  },
+  {
+    id: "level-5",
+    title: "得意科目の芽",
+    description: "いずれかの科目Lv5到達",
+    rarity: "R",
+    rewardSrc: "/rewards/level-5.png",
+    condition: (c) => Object.values(c.subjectStats).some((s) => s.level >= 5),
+  },
 
-  { id: "study-1800", title: "積み上げる者", description: "累計30時間勉強", rarity: "SR", rewardId: "reward16", condition: (c) => c.totalMinutes >= 1800 },
-  { id: "study-3000", title: "50時間の壁", description: "累計50時間勉強", rarity: "SR", rewardId: "reward17", condition: (c) => c.totalMinutes >= 3000 },
-  { id: "task-30", title: "習慣の気配", description: "30タスク完了", rarity: "SR", rewardId: "reward18", condition: (c) => c.doneTaskCount >= 30 },
-  { id: "task-50", title: "タスクハンター", description: "50タスク完了", rarity: "SR", rewardId: "reward19", condition: (c) => c.doneTaskCount >= 50 },
-  { id: "level-10", title: "育成の手応え", description: "いずれかの科目Lv10到達", rarity: "SR", rewardId: "reward20", condition: (c) => Object.values(c.subjectStats).some((s) => s.level >= 10) },
+  {
+    id: "study-1800",
+    title: "積み上げる者",
+    description: "累計30時間勉強",
+    rarity: "SR",
+    rewardSrc: "/rewards/study-1800.png",
+    condition: (c) => c.totalMinutes >= 1800,
+  },
+  {
+    id: "study-3000",
+    title: "50時間の壁",
+    description: "累計50時間勉強",
+    rarity: "SR",
+    rewardSrc: "/rewards/study-3000.png",
+    condition: (c) => c.totalMinutes >= 3000,
+  },
+  {
+    id: "task-30",
+    title: "習慣の気配",
+    description: "30タスク完了",
+    rarity: "SR",
+    rewardSrc: "/rewards/task-30.png",
+    condition: (c) => c.doneTaskCount >= 30,
+  },
+  {
+    id: "task-50",
+    title: "タスクハンター",
+    description: "50タスク完了",
+    rarity: "SR",
+    rewardSrc: "/rewards/task-50.png",
+    condition: (c) => c.doneTaskCount >= 50,
+  },
+  {
+    id: "level-10",
+    title: "育成の手応え",
+    description: "いずれかの科目Lv10到達",
+    rarity: "SR",
+    rewardSrc: "/rewards/level-10.png",
+    condition: (c) => Object.values(c.subjectStats).some((s) => s.level >= 10),
+  },
 ];
+
+const rewardItems = achievements.map((achievement) => ({
+  id: achievement.id,
+  title: achievement.title,
+  src: achievement.rewardSrc,
+}));
 
 function todayKey() {
   return new Date().toISOString().slice(0, 10);
@@ -167,7 +305,10 @@ export default function Page() {
   const [subjectStats, setSubjectStats] = useState<SubjectStats>({});
   const [history, setHistory] = useState<History>({});
   const [selectedReward, setSelectedReward] = useState<string | null>(null);
+
   const [notice, setNotice] = useState<Achievement | null>(null);
+  const [noticeQueue, setNoticeQueue] = useState<Achievement[]>([]);
+
   const [draggingId, setDraggingId] = useState<string | null>(null);
 
   const [sampleConfirming, setSampleConfirming] = useState(false);
@@ -233,9 +374,7 @@ export default function Page() {
     subjectStats,
     history,
   };
-  const noticeReward = notice
-    ? rewards.find((reward) => reward.id === notice.rewardId)
-    : null;
+
   useEffect(() => {
     if (!hydrated) return;
 
@@ -252,11 +391,24 @@ export default function Page() {
 
     setUnlockedRewardIds((prev) => [
       ...prev,
-      ...newly.map((a) => a.rewardId).filter((id) => !prev.includes(id)),
+      ...newly.map((a) => a.id).filter((id) => !prev.includes(id)),
     ]);
 
-    setNotice(newly[0]);
+    setNoticeQueue((prev) => [...prev, ...newly]);
+
+    setNotice((prev) => {
+      if (prev) return prev;
+      return newly[0];
+    });
   }, [hydrated, tasks, subjectStats, history, unlockedAchievementIds]);
+
+  function closeNotice() {
+    setNoticeQueue((prev) => {
+      const next = prev.slice(1);
+      setNotice(next[0] ?? null);
+      return next;
+    });
+  }
 
   function addTask() {
     clearConfirming();
@@ -387,6 +539,7 @@ export default function Page() {
     setSubjectStats({});
     setHistory({});
     setNotice(null);
+    setNoticeQueue([]);
     setSelectedReward(null);
   }
 
@@ -508,8 +661,9 @@ export default function Page() {
     setSubjectStats(sampleSubjectStats);
     setHistory(sampleHistory);
     setUnlockedAchievementIds(achievements.map((a) => a.id));
-    setUnlockedRewardIds(rewards.map((r) => r.id));
+    setUnlockedRewardIds(achievements.map((a) => a.id));
     setNotice(null);
+    setNoticeQueue([]);
   }
 
   function reorder(targetId: string) {
@@ -744,7 +898,9 @@ export default function Page() {
                         clearConfirming();
                         setExams((prev) =>
                           prev.map((x) =>
-                            x.id === exam.id ? { ...x, name: e.target.value } : x
+                            x.id === exam.id
+                              ? { ...x, name: e.target.value }
+                              : x
                           )
                         );
                       }}
@@ -759,7 +915,9 @@ export default function Page() {
                         clearConfirming();
                         setExams((prev) =>
                           prev.map((x) =>
-                            x.id === exam.id ? { ...x, date: e.target.value } : x
+                            x.id === exam.id
+                              ? { ...x, date: e.target.value }
+                              : x
                           )
                         );
                       }}
@@ -824,13 +982,16 @@ export default function Page() {
             <div className="mb-4 flex justify-between">
               <h2 className="text-xl font-bold">ご褒美ギャラリー</h2>
               <p className="text-sm text-slate-500">
-                {unlockedRewardIds.length}/{rewards.length}　
-                {Math.round((unlockedRewardIds.length / rewards.length) * 100)}%
+                {unlockedRewardIds.length}/{rewardItems.length}　
+                {Math.round(
+                  (unlockedRewardIds.length / rewardItems.length) * 100
+                )}
+                %
               </p>
             </div>
 
             <div className="grid grid-cols-3 gap-3 md:grid-cols-6 lg:grid-cols-10">
-              {rewards.map((reward) => {
+              {rewardItems.map((reward) => {
                 const unlocked = unlockedRewardIds.includes(reward.id);
 
                 return (
@@ -841,15 +1002,16 @@ export default function Page() {
                       if (unlocked) setSelectedReward(reward.src);
                     }}
                     className="aspect-square overflow-hidden rounded-2xl border bg-slate-100"
+                    title={reward.title}
                   >
                     {unlocked ? (
                       <img
                         src={reward.src}
-                        alt={reward.id}
+                        alt={reward.title}
                         className="h-full w-full object-cover"
                       />
                     ) : (
-                      <span className="flex h-full items-center justify-center text-2xl text-slate-400">
+                      <span className="flex h-full w-full items-center justify-center text-2xl text-slate-400">
                         ?
                       </span>
                     )}
@@ -905,7 +1067,7 @@ export default function Page() {
         </div>
       )}
 
-           {notice && (
+      {notice && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-6">
           <div className="w-full max-w-sm overflow-hidden rounded-[2rem] bg-white text-center shadow-2xl">
             <div className="bg-gradient-to-br from-yellow-100 via-white to-purple-100 p-6">
@@ -926,17 +1088,11 @@ export default function Page() {
               </p>
 
               <div className="mx-auto mt-5 h-56 w-56 overflow-hidden rounded-3xl border-4 border-white bg-slate-100 shadow-xl">
-                {noticeReward ? (
-                  <img
-                    src={noticeReward.src}
-                    alt={notice.title}
-                    className="h-full w-full object-cover"
-                  />
-                ) : (
-                  <div className="flex h-full w-full items-center justify-center text-slate-400">
-                    No Image
-                  </div>
-                )}
+                <img
+                  src={notice.rewardSrc}
+                  alt={notice.title}
+                  className="h-full w-full object-cover"
+                />
               </div>
 
               <p className="mt-4 text-sm font-bold text-purple-700">
@@ -944,11 +1100,17 @@ export default function Page() {
               </p>
 
               <button
-                onClick={() => setNotice(null)}
+                onClick={closeNotice}
                 className="mt-5 w-full rounded-2xl bg-slate-900 px-5 py-3 font-bold text-white"
               >
-                受け取る
+                {noticeQueue.length > 1 ? "次の実績へ" : "受け取る"}
               </button>
+
+              {noticeQueue.length > 1 && (
+                <p className="mt-2 text-xs text-slate-500">
+                  残り {noticeQueue.length - 1} 件
+                </p>
+              )}
             </div>
           </div>
         </div>
