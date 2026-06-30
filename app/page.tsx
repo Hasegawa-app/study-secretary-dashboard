@@ -717,7 +717,7 @@ export default function Page() {
           </section>
 
           <section className="rounded-3xl bg-white p-4 shadow">
-            <h2 className="font-bold">開発用</h2>
+            <h2 className="font-bold">追加ボタン</h2>
 
             {sampleConfirming && (
               <div className="mt-3 rounded-2xl border border-orange-300 bg-orange-50 p-3 text-sm text-orange-800">
