@@ -296,7 +296,7 @@ function rarityClass(rarity: Rarity) {
 
 export default function Page() {
   const [hydrated, setHydrated] = useState(false);
-
+  const [importing, setImporting] = useState(false);
   const [assistant, setAssistant] = useState(assistantImages[0]);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [exams, setExams] = useState<Exam[]>(initialExams);
@@ -543,6 +543,57 @@ export default function Page() {
     setSelectedReward(null);
   }
 
+  function exportData() {
+    const data = {
+      tasks,
+      exams,
+      unlockedRewardIds,
+      unlockedAchievementIds,
+      subjectStats,
+      history,
+    };
+
+    const blob = new Blob([JSON.stringify(data, null, 2)], {
+      type: "application/json",
+    });
+
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+
+    a.href = url;
+    a.download = `study-data-backup-${todayKey()}.json`;
+    a.click();
+
+    URL.revokeObjectURL(url);
+  }
+
+  function importData(file: File | null) {
+    if (!file) return;
+
+    const reader = new FileReader();
+
+    reader.onload = () => {
+      try {
+        const data = JSON.parse(String(reader.result));
+
+        setTasks(data.tasks ?? []);
+        setExams(data.exams ?? initialExams);
+        setUnlockedRewardIds(data.unlockedRewardIds ?? []);
+        setUnlockedAchievementIds(data.unlockedAchievementIds ?? []);
+        setSubjectStats(data.subjectStats ?? {});
+        setHistory(data.history ?? {});
+        setNotice(null);
+        setNoticeQueue([]);
+        setSelectedReward(null);
+        setImporting(false);
+      } catch {
+        alert("バックアップファイルの読み込みに失敗しました");
+      }
+    };
+
+    reader.readAsText(file);
+  }
+
   function sampleData() {
     if (!sampleConfirming) {
       setSampleConfirming(true);
@@ -749,6 +800,22 @@ export default function Page() {
               >
                 {sampleConfirming ? "もう一度押すと投入" : "サンプルデータ投入"}
               </button>
+              <button
+  onClick={exportData}
+  className="rounded-xl bg-emerald-600 p-2 text-white"
+>
+  データを書き出す
+</button>
+
+<label className="cursor-pointer rounded-xl bg-purple-600 p-2 text-center text-white">
+  データを読み込む
+  <input
+    type="file"
+    accept="application/json"
+    className="hidden"
+    onChange={(e) => importData(e.target.files?.[0] ?? null)}
+  />
+</label>
 
               <button
                 onClick={resetData}
