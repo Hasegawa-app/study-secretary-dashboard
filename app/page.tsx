@@ -233,7 +233,9 @@ export default function Page() {
     subjectStats,
     history,
   };
-
+  const noticeReward = notice
+    ? rewards.find((reward) => reward.id === notice.rewardId)
+    : null;
   useEffect(() => {
     if (!hydrated) return;
 
@@ -903,21 +905,51 @@ export default function Page() {
         </div>
       )}
 
-      {notice && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-6">
-          <div className="max-w-sm rounded-3xl bg-white p-6 text-center shadow-xl">
-            <p className="text-sm font-bold text-yellow-600">
-              {notice.rarity} 実績解除！
-            </p>
-            <h2 className="mt-2 text-2xl font-black">{notice.title}</h2>
-            <p className="mt-2 text-slate-500">{notice.description}</p>
-            <p className="mt-4 text-sm font-bold">{notice.rewardId} 解放！</p>
-            <button
-              onClick={() => setNotice(null)}
-              className="mt-5 rounded-xl bg-slate-900 px-5 py-2 text-white"
-            >
-              OK
-            </button>
+           {notice && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-6">
+          <div className="w-full max-w-sm overflow-hidden rounded-[2rem] bg-white text-center shadow-2xl">
+            <div className="bg-gradient-to-br from-yellow-100 via-white to-purple-100 p-6">
+              <p className="text-xs font-black tracking-[0.25em] text-yellow-600">
+                ACHIEVEMENT UNLOCKED
+              </p>
+
+              <div className="mt-3 inline-flex rounded-full bg-slate-900 px-3 py-1 text-xs font-bold text-white">
+                {notice.rarity} 実績解除
+              </div>
+
+              <h2 className="mt-4 text-2xl font-black text-slate-900">
+                {notice.title}
+              </h2>
+
+              <p className="mt-2 text-sm text-slate-500">
+                {notice.description}
+              </p>
+
+              <div className="mx-auto mt-5 h-56 w-56 overflow-hidden rounded-3xl border-4 border-white bg-slate-100 shadow-xl">
+                {noticeReward ? (
+                  <img
+                    src={noticeReward.src}
+                    alt={notice.title}
+                    className="h-full w-full object-cover"
+                  />
+                ) : (
+                  <div className="flex h-full w-full items-center justify-center text-slate-400">
+                    No Image
+                  </div>
+                )}
+              </div>
+
+              <p className="mt-4 text-sm font-bold text-purple-700">
+                新しいご褒美画像が解放されました！
+              </p>
+
+              <button
+                onClick={() => setNotice(null)}
+                className="mt-5 w-full rounded-2xl bg-slate-900 px-5 py-3 font-bold text-white"
+              >
+                受け取る
+              </button>
+            </div>
           </div>
         </div>
       )}
