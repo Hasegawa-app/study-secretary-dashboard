@@ -189,7 +189,7 @@ const achievements: Achievement[] = [
     condition: (c) => Object.values(c.subjectStats).some((s) => s.level >= 5),
   },
 {
-    id: "study-1800",
+    id: "study-1200",
     title: "積み上げる者",
     description: "累計20時間勉強",
     rarity: "SR",
