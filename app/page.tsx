@@ -841,7 +841,7 @@ export default function Page() {
             />
             <div className="p-4">
               <h1 className="text-xl font-bold">学習アシスタント</h1>
-              <p className="text-sm text-slate-500">今日も頑張ろう❤</p>
+              <p className="text-sm text-slate-500">今日も頑張ろっ❤</p>
             </div>
           </section>
 
@@ -1123,7 +1123,7 @@ export default function Page() {
                     }`}
                   >
                     <b>{a.secret && !unlocked ? "？？？" : a.title}</b>
-<span>{a.secret && !unlocked ? "SECRET" : a.rarity}</span>
+<span>{a.secret && !unlocked ? "secret" : a.rarity}</span>
 
 <p className="text-sm">
   {a.secret && !unlocked ? "条件不明" : a.description}
