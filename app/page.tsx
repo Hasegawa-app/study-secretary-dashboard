@@ -25,6 +25,7 @@ type Achievement = {
   description: string;
   rarity: Rarity;
   rewardSrc: string;
+  secret?: boolean;
   condition: (ctx: AchievementContext) => boolean;
 };
 
@@ -212,46 +213,70 @@ const achievements: Achievement[] = [
     rewardSrc: "/rewards/study-3000.png",
     condition: (c) => c.totalMinutes >= 3000,
   },
-   {
-    id: "task-20",
-    title: "習慣の芽生え",
-    description: "20タスク完了",
-    rarity: "SR",
-    rewardSrc: "/rewards/task-20.png",
-    condition: (c) => c.doneTaskCount >= 20,
-  },
   {
-    id: "task-30",
-    title: "習慣の気配",
-    description: "30タスク完了",
-    rarity: "SR",
-    rewardSrc: "/rewards/task-30.png",
-    condition: (c) => c.doneTaskCount >= 30,
+  id: "task-20",
+  title: "習慣の芽生え",
+  description: "20タスク完了",
+  rarity: "SR",
+  rewardSrc: "/rewards/task-20.png",
+  condition: (c) => c.doneTaskCount >= 20,
+},
+{
+  id: "task-30",
+  title: "習慣の気配",
+  description: "30タスク完了",
+  rarity: "SR",
+  rewardSrc: "/rewards/task-30.png",
+  condition: (c) => c.doneTaskCount >= 30,
+},
+{
+  id: "task-50",
+  title: "タスクハンター",
+  description: "50タスク完了",
+  rarity: "SR",
+  rewardSrc: "/rewards/task-50.png",
+  condition: (c) => c.doneTaskCount >= 50,
+},
+{
+  id: "task-70",
+  title: "タスクの鬼",
+  description: "70タスク完了",
+  rarity: "SR",
+  rewardSrc: "/rewards/task-70.png",
+  condition: (c) => c.doneTaskCount >= 70,
+},
+{
+  id: "level-10",
+  title: "育成の手応え",
+  description: "いずれかの科目Lv10到達",
+  rarity: "SR",
+  rewardSrc: "/rewards/level-10.png",
+  condition: (c) => Object.values(c.subjectStats).some((s) => s.level >= 10),
+},
+{
+  id: "secret-night",
+  title: "夜更かしさん",
+  description: "0時〜4時にタスクを1つ完了した",
+  rarity: "SR",
+  rewardSrc: "/rewards/secret-night.png",
+  secret: true,
+  condition: () => {
+    const h = new Date().getHours();
+    return h >= 0 && h < 4;
   },
-  {
-    id: "task-50",
-    title: "タスクハンター",
-    description: "50タスク完了",
-    rarity: "SR",
-    rewardSrc: "/rewards/task-50.png",
-    condition: (c) => c.doneTaskCount >= 50,
-  },
-   {
-    id: "task- 70",
-    title: "タスクの鬼",
-    description: "70タスク完了",
-    rarity: "SR",
-    rewardSrc: "/rewards/task-70.png",
-    condition: (c) => c.doneTaskCount >= 70,
-  },
-  {
-    id: "level-10",
-    title: "育成の手応え",
-    description: "いずれかの科目Lv10到達",
-    rarity: "SR",
-    rewardSrc: "/rewards/level-10.png",
-    condition: (c) => Object.values(c.subjectStats).some((s) => s.level >= 10),
-  },
+},
+{
+  id: "secret-early",
+  title: "早起きは三文の徳",
+  description: "5時〜7時にタスクを1つ完了した",
+  rarity: "SR",
+  rewardSrc: "/rewards/secret-early.png",
+  secret: true,
+  condition: () => {
+    const h = new Date().getHours();
+    return h >= 5 && h < 7;
+    },
+},
 ];
 
 const rewardItems = achievements.map((achievement) => ({
@@ -1097,11 +1122,12 @@ export default function Page() {
                       unlocked ? "" : "opacity-50"
                     }`}
                   >
-                    <div className="mb-2 flex justify-between">
-                      <b>{a.title}</b>
-                      <span>{a.rarity}</span>
-                    </div>
-                    <p className="text-sm">{a.description}</p>
+                    <b>{a.secret && !unlocked ? "？？？" : a.title}</b>
+<span>{a.secret && !unlocked ? "SECRET" : a.rarity}</span>
+
+<p className="text-sm">
+  {a.secret && !unlocked ? "条件不明" : a.description}
+</p>
                     <p className="mt-2 text-xs">
                       {unlocked ? "解除済み" : "未解除"}
                     </p>
