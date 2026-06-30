@@ -567,33 +567,73 @@ export default function Page() {
     URL.revokeObjectURL(url);
   }
 
-  function importData(file: File | null) {
+    function importData(file: File | null) {
     if (!file) return;
 
     const reader = new FileReader();
 
     reader.onload = () => {
       try {
-        const data = JSON.parse(String(reader.result));
+        const raw = String(reader.result ?? "");
+        if (!raw.trim()) {
+          alert("ファイルが空です");
+          return;
+        }
 
-        setTasks(data.tasks ?? []);
-        setExams(data.exams ?? initialExams);
-        setUnlockedRewardIds(data.unlockedRewardIds ?? []);
-        setUnlockedAchievementIds(data.unlockedAchievementIds ?? []);
-        setSubjectStats(data.subjectStats ?? {});
-        setHistory(data.history ?? {});
+        const data = JSON.parse(raw);
+
+        const nextTasks = Array.isArray(data.tasks) ? data.tasks : [];
+        const nextExams = Array.isArray(data.exams) ? data.exams : initialExams;
+
+        const nextUnlockedRewardIds = Array.isArray(data.unlockedRewardIds)
+          ? data.unlockedRewardIds
+          : [];
+
+        const nextUnlockedAchievementIds = Array.isArray(
+          data.unlockedAchievementIds
+        )
+          ? data.unlockedAchievementIds
+          : [];
+
+        const nextSubjectStats =
+          data.subjectStats && typeof data.subjectStats === "object"
+            ? data.subjectStats
+            : {};
+
+        const nextHistory =
+          data.history && typeof data.history === "object" ? data.history : {};
+
+        setTasks(nextTasks);
+        setExams(nextExams);
+        setUnlockedRewardIds(nextUnlockedRewardIds);
+        setUnlockedAchievementIds(nextUnlockedAchievementIds);
+        setSubjectStats(nextSubjectStats);
+        setHistory(nextHistory);
+
+        save(TASK_KEY, nextTasks);
+        save(EXAM_KEY, nextExams);
+        save(REWARD_KEY, nextUnlockedRewardIds);
+        save(ACHIEVEMENT_KEY, nextUnlockedAchievementIds);
+        save(SUBJECT_KEY, nextSubjectStats);
+        save(HISTORY_KEY, nextHistory);
+
         setNotice(null);
         setNoticeQueue([]);
         setSelectedReward(null);
-        setImporting(false);
-      } catch {
+
+        alert("データを読み込みました");
+      } catch (error) {
+        console.error(error);
         alert("バックアップファイルの読み込みに失敗しました");
       }
     };
 
+    reader.onerror = () => {
+      alert("ファイルを読み込めませんでした");
+    };
+
     reader.readAsText(file);
   }
-
   function sampleData() {
     if (!sampleConfirming) {
       setSampleConfirming(true);
@@ -809,12 +849,15 @@ export default function Page() {
 
 <label className="cursor-pointer rounded-xl bg-purple-600 p-2 text-center text-white">
   データを読み込む
-  <input
-    type="file"
-    accept="application/json"
-    className="hidden"
-    onChange={(e) => importData(e.target.files?.[0] ?? null)}
-  />
+<input
+  type="file"
+  accept=".json,application/json"
+  className="hidden"
+  onChange={(e) => {
+    importData(e.target.files?.[0] ?? null);
+    e.target.value = "";
+  }}
+/>
 </label>
 
               <button
