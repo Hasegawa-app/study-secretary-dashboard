@@ -236,6 +236,14 @@ const achievements: Achievement[] = [
     rewardSrc: "/rewards/task-50.png",
     condition: (c) => c.doneTaskCount >= 50,
   },
+   {
+    id: "task- 70",
+    title: "タスクの鬼",
+    description: "70タスク完了",
+    rarity: "SR",
+    rewardSrc: "/rewards/task-70.png",
+    condition: (c) => c.doneTaskCount >= 70,
+  },
   {
     id: "level-10",
     title: "育成の手応え",
