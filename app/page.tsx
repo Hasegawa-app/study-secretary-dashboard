@@ -188,10 +188,17 @@ const achievements: Achievement[] = [
     rewardSrc: "/rewards/level-5.png",
     condition: (c) => Object.values(c.subjectStats).some((s) => s.level >= 5),
   },
-
-  {
+{
     id: "study-1800",
     title: "積み上げる者",
+    description: "累計20時間勉強",
+    rarity: "SR",
+    rewardSrc: "/rewards/study-1200.png",
+    condition: (c) => c.totalMinutes >= 1200,
+  },
+  {
+    id: "study-1800",
+    title: "さらに積み上げる者",
     description: "累計30時間勉強",
     rarity: "SR",
     rewardSrc: "/rewards/study-1800.png",
