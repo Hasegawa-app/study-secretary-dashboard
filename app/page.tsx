@@ -841,7 +841,7 @@ export default function Page() {
             />
             <div className="p-4">
               <h1 className="text-xl font-bold">学習アシスタント</h1>
-              <p className="text-sm text-slate-500">今日も頑張ろっ❤</p>
+              <p className="text-sm text-slate-500">あなたのアシスタント、白石凛です。学習をサポートします。</p>
             </div>
           </section>
 
