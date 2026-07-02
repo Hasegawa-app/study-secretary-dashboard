@@ -54,8 +54,6 @@ const REWARD_KEY = "study-unlocked-rewards";
 const ACHIEVEMENT_KEY = "study-achievements";
 const SUBJECT_KEY = "study-subject-stats";
 const HISTORY_KEY = "study-history";
-const [galleryOpenCount, setGalleryOpenCount] = useState(0);
-
 const assistantImages = [
   "/assistants/assistant01.png",
   "/assistants/assistant02.png",
@@ -402,7 +400,7 @@ export default function Page() {
   const [subjectStats, setSubjectStats] = useState<SubjectStats>({});
   const [history, setHistory] = useState<History>({});
   const [selectedRewardId, setSelectedRewardId] = useState<string | null>(null);
-
+  const [galleryOpenCount, setGalleryOpenCount] = useState(0);
   const [notice, setNotice] = useState<Achievement | null>(null);
   const [noticeQueue, setNoticeQueue] = useState<Achievement[]>([]);
 
