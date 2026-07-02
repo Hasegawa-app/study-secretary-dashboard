@@ -34,6 +34,7 @@ type AchievementContext = {
   subjectCount: number;
   subjectStats: SubjectStats;
   history: History;
+  lastTaskMinutes: number;
 };
 
 type Achievement = {
@@ -280,6 +281,22 @@ const achievements: Achievement[] = [
       return h >= 5 && h < 7;
     },
   },
+  {
+  id: "one-task-30",
+  title: "30分一本勝負",
+  description: "30分以上の学習を1回記録",
+  rarity: "N",
+  rewardSrc: "/rewards/one-task-30.png",
+  condition: (c) => c.lastTaskMinutes >= 30,
+},
+{
+  id: "imaginary-time",
+  title: "虚数時間",
+  description: "マイナス時間を記録",
+  rarity: "SSR",
+  rewardSrc: "/rewards/imaginary-time.png",
+  condition: (c) => c.lastTaskMinutes < 0,
+},
 ];
 
 const rewardItems = achievements.map((achievement) => ({
@@ -458,6 +475,7 @@ export default function Page() {
     subjectCount: new Set(doneTasks.map((t) => t.subject || "未分類")).size,
     subjectStats,
     history,
+    lastTaskMinutes: doneTasks.length > 0 ? doneTasks[doneTasks.length - 1].minutes || 0 : 0,
   };
 
   useEffect(() => {
@@ -1035,7 +1053,7 @@ export default function Page() {
                   onDragStart={() => setDraggingId(task.id)}
                   onDragOver={(e) => e.preventDefault()}
                   onDrop={() => reorder(task.id)}
-                 className={`grid gap-2 rounded-2xl border p-3 transition-all duration-300 md:grid-cols-[1fr_2fr_100px_70px_60px] ${
+                 className={`grid gap-2 rounded-2xl border p-3 transition-all duration-300 md:grid-cols-[1fr_2fr_100px_96px_60px] ${
                   task.done
                   ? "border-emerald-400 bg-emerald-50 shadow-lg ring-2 ring-emerald-200"
                   : "bg-white"
@@ -1088,19 +1106,26 @@ export default function Page() {
                     className="rounded-xl border p-2"
                   />
 
-                  <label className="flex items-center justify-center gap-2 text-sm">
-                    <input
-                      data-task-id={task.id}
-                      data-field="done"
-                      type="checkbox"
-                      checked={task.done}
-                      onChange={(e) => {
-                        updateTask(task.id, { done: e.target.checked });
-                        if (e.target.checked) flashCompletedTask(task.id);
-                      }}
-                    />
-                    完了
-                  </label>
+                  <label
+  data-task-id={task.id}
+  data-field="done"
+  className={`flex min-h-[42px] cursor-pointer items-center justify-center rounded-xl border px-3 py-2 text-sm font-bold transition ${
+    task.done
+      ? "border-emerald-400 bg-emerald-100 text-emerald-700"
+      : "border-slate-300 bg-slate-50 text-slate-600 hover:bg-slate-100"
+  }`}
+>
+  <input
+    type="checkbox"
+    checked={task.done}
+    onChange={(e) => {
+      updateTask(task.id, { done: e.target.checked });
+      if (e.target.checked) flashCompletedTask(task.id);
+    }}
+    className="sr-only"
+  />
+  {task.done ? "記録済み" : "記録"}
+</label>
 
                   <button
                     onClick={() => deleteTask(task.id)}
