@@ -474,38 +474,44 @@ export default function Page() {
     ]);
   }
 
-  function applyStudyDiff(subject: string, day: string, diff: number) {
-    if (diff === 0) return;
+function applyStudyDiff(subject: string, day: string, diff: number) {
+  if (diff === 0) return;
 
-    const subjectKey = subject || "未分類";
+  const subjectKey = subject || "未分類";
 
-    setSubjectStats((prev) => {
-      const next = { ...prev };
+  setSubjectStats((prev) => {
+    const next = { ...prev };
 
-      const old = next[subjectKey] ?? {
-        exp: 0,
-        level: 1,
-        totalMinutes: 0,
-      };
+    const old = next[subjectKey] ?? {
+      exp: 0,
+      level: 1,
+      totalMinutes: 0,
+    };
 
-      const newExp = Math.max(0, old.exp + diff);
-      const newTotalMinutes = Math.max(0, old.totalMinutes + diff);
-      const levelData = calcLevel(newExp);
+    const newExp = Math.max(0, old.exp + diff);
+    const newTotalMinutes = Math.max(0, old.totalMinutes + diff);
 
-      next[subjectKey] = {
-        exp: newExp,
-        level: levelData.level,
-        totalMinutes: newTotalMinutes,
-      };
-
+    if (newExp <= 0 && newTotalMinutes <= 0) {
+      delete next[subjectKey];
       return next;
-    });
+    }
 
-    setHistory((prev) => ({
-      ...prev,
-      [day]: Math.max(0, (prev[day] ?? 0) + diff),
-    }));
-  }
+    const levelData = calcLevel(newExp);
+
+    next[subjectKey] = {
+      exp: newExp,
+      level: levelData.level,
+      totalMinutes: newTotalMinutes,
+    };
+
+    return next;
+  });
+
+  setHistory((prev) => ({
+    ...prev,
+    [day]: Math.max(0, (prev[day] ?? 0) + diff),
+  }));
+}
 
   function updateTask(id: string, patch: Partial<Task>) {
     clearConfirming();
