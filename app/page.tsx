@@ -1087,10 +1087,10 @@ export default function Page() {
                     type="number"
                     value={task.minutes || ""}
                    onChange={(e) =>
-  updateTask(task.id, {
-    minutes: Math.max(0, Number(e.target.value)),
-  })
-}
+                    updateTask(task.id, {
+                     minutes: Math.max(-1, Number(e.target.value)),
+                    })
+                    }
                     onKeyDown={(e) =>
                       handleTaskInputKeyDown(e, task.id, "minutes")
                     }
