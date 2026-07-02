@@ -1032,19 +1032,26 @@ export default function Page() {
                     className="rounded-xl border p-2"
                   />
 
-                  <label className="flex items-center justify-center gap-2 text-sm">
-                    <input
-                      data-task-id={task.id}
-                      data-field="done"
-                      type="checkbox"
-                      checked={task.done}
-                      onChange={(e) => {
-                        updateTask(task.id, { done: e.target.checked });
-                        if (e.target.checked) flashCompletedTask(task.id);
-                      }}
-                    />
-                    完了
-                  </label>
+                  <label
+  data-task-id={task.id}
+  data-field="done"
+  className={`flex cursor-pointer items-center justify-center rounded-xl border px-3 py-2 text-sm font-bold transition ${
+    task.done
+      ? "border-emerald-400 bg-emerald-100 text-emerald-700"
+      : "border-slate-300 bg-slate-50 text-slate-600"
+  }`}
+>
+  <input
+    type="checkbox"
+    checked={task.done}
+    onChange={(e) => {
+      updateTask(task.id, { done: e.target.checked });
+      if (e.target.checked) flashCompletedTask(task.id);
+    }}
+    className="sr-only"
+  />
+  {task.done ? "記録済み" : "記録"}
+</label>
 
                   <button
                     onClick={() => deleteTask(task.id)}
