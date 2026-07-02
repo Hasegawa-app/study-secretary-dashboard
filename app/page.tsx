@@ -54,6 +54,8 @@ const REWARD_KEY = "study-unlocked-rewards";
 const ACHIEVEMENT_KEY = "study-achievements";
 const SUBJECT_KEY = "study-subject-stats";
 const HISTORY_KEY = "study-history";
+const GALLERY_COUNT_KEY = "study-gallery-open-count";
+
 const assistantImages = [
   "/assistants/assistant01.png",
   "/assistants/assistant02.png",
@@ -401,6 +403,7 @@ export default function Page() {
   const [history, setHistory] = useState<History>({});
   const [selectedRewardId, setSelectedRewardId] = useState<string | null>(null);
   const [galleryOpenCount, setGalleryOpenCount] = useState(0);
+
   const [notice, setNotice] = useState<Achievement | null>(null);
   const [noticeQueue, setNoticeQueue] = useState<Achievement[]>([]);
 
@@ -430,6 +433,7 @@ export default function Page() {
     setAchievementUnlocks(loadAchievementUnlocks());
     setSubjectStats(load<SubjectStats>(SUBJECT_KEY, {}));
     setHistory(load<History>(HISTORY_KEY, {}));
+    setGalleryOpenCount(load<number>(GALLERY_COUNT_KEY, 0));
 
     setHydrated(true);
   }, []);
@@ -463,6 +467,11 @@ export default function Page() {
     if (!hydrated) return;
     save(HISTORY_KEY, history);
   }, [hydrated, history]);
+
+  useEffect(() => {
+    if (!hydrated) return;
+    save(GALLERY_COUNT_KEY, galleryOpenCount);
+  }, [hydrated, galleryOpenCount]);
 
   const doneTasks = tasks.filter((t) => t.done);
   const totalMinutes = doneTasks.reduce((sum, t) => sum + (t.minutes || 0), 0);
@@ -509,7 +518,7 @@ export default function Page() {
       if (prev) return prev;
       return newly[0];
     });
-  }, [hydrated, tasks, subjectStats, history, achievementUnlocks]);
+  }, [hydrated, tasks, subjectStats, history, achievementUnlocks, galleryOpenCount]);
 
   function closeNotice() {
     setNoticeQueue((prev) => {
@@ -657,6 +666,7 @@ export default function Page() {
     localStorage.removeItem(ACHIEVEMENT_KEY);
     localStorage.removeItem(SUBJECT_KEY);
     localStorage.removeItem(HISTORY_KEY);
+    localStorage.removeItem(GALLERY_COUNT_KEY);
 
     setTasks([]);
     setExams(initialExams);
@@ -667,6 +677,7 @@ export default function Page() {
     setNotice(null);
     setNoticeQueue([]);
     setSelectedRewardId(null);
+    setGalleryOpenCount(0);
   }
 
   function exportData() {
@@ -677,6 +688,7 @@ export default function Page() {
       achievementUnlocks,
       subjectStats,
       history,
+      galleryOpenCount,
     };
 
     const blob = new Blob([JSON.stringify(data, null, 2)], {
@@ -716,6 +728,8 @@ export default function Page() {
         const nextAchievementUnlocks = normalizeAchievementUnlocks(data.achievementUnlocks ?? data.unlockedAchievementIds);
         const nextSubjectStats = rebuildSubjectStats(nextTasks);
         const nextHistory = rebuildHistory(nextTasks);
+        const nextGalleryOpenCount =
+          typeof data.galleryOpenCount === "number" ? data.galleryOpenCount : 0;
 
         setTasks(nextTasks);
         setExams(nextExams);
@@ -734,6 +748,8 @@ export default function Page() {
         setNotice(null);
         setNoticeQueue([]);
         setSelectedRewardId(null);
+        setGalleryOpenCount(nextGalleryOpenCount);
+        save(GALLERY_COUNT_KEY, nextGalleryOpenCount);
 
         alert("データを読み込みました");
       } catch (error) {
@@ -870,6 +886,7 @@ export default function Page() {
     setUnlockedRewardIds(achievements.map((a) => a.id));
     setNotice(null);
     setNoticeQueue([]);
+    setGalleryOpenCount(0);
   }
 
   function reorder(targetId: string) {
