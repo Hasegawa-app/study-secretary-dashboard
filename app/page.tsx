@@ -291,7 +291,7 @@ const achievements: Achievement[] = [
 },
 {
   id: "imaginary-time",
-  title: "虚数時間",
+  title: "そんなことしてる場合？",
   description: "マイナス時間を記録",
   rarity: "SSR",
   rewardSrc: "/rewards/imaginary-time.png",
