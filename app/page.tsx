@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 type Task = {
   id: string;
@@ -340,6 +340,10 @@ export default function Page() {
   const [noticeQueue, setNoticeQueue] = useState<Achievement[]>([]);
 
   const [draggingId, setDraggingId] = useState<string | null>(null);
+  const [newTaskId, setNewTaskId] = useState<string | null>(null);
+
+  const newTaskRef = useRef<HTMLDivElement | null>(null);
+  const newTaskSubjectInputRef = useRef<HTMLInputElement | null>(null);
 
   const [sampleConfirming, setSampleConfirming] = useState(false);
   const [resetConfirming, setResetConfirming] = useState(false);
@@ -440,13 +444,28 @@ export default function Page() {
     });
   }
 
+  useEffect(() => {
+    if (!hydrated || !newTaskId) return;
+
+    newTaskRef.current?.scrollIntoView({
+      behavior: "smooth",
+      block: "center",
+    });
+
+    window.setTimeout(() => {
+      newTaskSubjectInputRef.current?.focus();
+    }, 250);
+  }, [hydrated, newTaskId, tasks.length]);
+
   function addTask() {
     clearConfirming();
+
+    const id = uid();
 
     setTasks((prev) => [
       ...prev,
       {
-        id: uid(),
+        id,
         subject: "",
         title: "",
         minutes: 0,
@@ -454,6 +473,8 @@ export default function Page() {
         createdAt: new Date().toISOString(),
       },
     ]);
+
+    setNewTaskId(id);
   }
 
   function applyStudyDiff(subject: string, day: string, diff: number) {
@@ -897,6 +918,7 @@ export default function Page() {
               {tasks.map((task) => (
                 <div
                   key={task.id}
+                  ref={task.id === newTaskId ? newTaskRef : null}
                   draggable
                   onDragStart={() => setDraggingId(task.id)}
                   onDragOver={(e) => e.preventDefault()}
@@ -904,6 +926,7 @@ export default function Page() {
                   className="grid gap-2 rounded-2xl border bg-white p-3 md:grid-cols-[1fr_2fr_100px_70px_60px]"
                 >
                   <input
+                    ref={task.id === newTaskId ? newTaskSubjectInputRef : null}
                     value={task.subject}
                     onChange={(e) =>
                       updateTask(task.id, { subject: e.target.value })
