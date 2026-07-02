@@ -19,19 +19,7 @@ type Exam = {
 
 type Rarity = "N" | "R" | "SR" | "SSR";
 
-type Achievement = {
-  id: string;
-  title: string;
-  description: string;
-  rarity: Rarity;
-  rewardSrc: string;
-  secret?: boolean;
-  condition: (ctx: AchievementContext) => boolean;
-};
-
 type SubjectStat = {
-  exp: number;
-  level: number;
   totalMinutes: number;
 };
 
@@ -44,6 +32,16 @@ type AchievementContext = {
   subjectCount: number;
   subjectStats: SubjectStats;
   history: History;
+};
+
+type Achievement = {
+  id: string;
+  title: string;
+  description: string;
+  rarity: Rarity;
+  rewardSrc: string;
+  secret?: boolean;
+  condition: (ctx: AchievementContext) => boolean;
 };
 
 const TASK_KEY = "study-tasks-linked";
@@ -66,6 +64,10 @@ const assistantImages = [
 ];
 
 const initialExams: Exam[] = [];
+
+function hasSubjectMinutes(c: AchievementContext, minutes: number) {
+  return Object.values(c.subjectStats).some((s) => s.totalMinutes >= minutes);
+}
 
 const achievements: Achievement[] = [
   {
@@ -116,7 +118,6 @@ const achievements: Achievement[] = [
     rewardSrc: "/rewards/subject-1.png",
     condition: (c) => c.subjectCount >= 1,
   },
-
   {
     id: "study-180",
     title: "今日けっこう強い",
@@ -174,22 +175,22 @@ const achievements: Achievement[] = [
     condition: (c) => c.subjectCount >= 3,
   },
   {
-    id: "level-3",
-    title: "育ってきた",
-    description: "いずれかの科目Lv3到達",
+    id: "subject-60",
+    title: "得意科目の芽",
+    description: "1科目で累計60分勉強",
     rarity: "R",
     rewardSrc: "/rewards/level-3.png",
-    condition: (c) => Object.values(c.subjectStats).some((s) => s.level >= 3),
+    condition: (c) => hasSubjectMinutes(c, 60),
   },
   {
-    id: "level-5",
-    title: "得意科目の芽",
-    description: "いずれかの科目Lv5到達",
+    id: "subject-300",
+    title: "ひとつ育ってきた",
+    description: "1科目で累計300分勉強",
     rarity: "R",
     rewardSrc: "/rewards/level-5.png",
-    condition: (c) => Object.values(c.subjectStats).some((s) => s.level >= 5),
+    condition: (c) => hasSubjectMinutes(c, 300),
   },
-{
+  {
     id: "study-1200",
     title: "積み上げる者",
     description: "累計20時間勉強",
@@ -214,69 +215,69 @@ const achievements: Achievement[] = [
     condition: (c) => c.totalMinutes >= 3000,
   },
   {
-  id: "task-20",
-  title: "習慣の芽生え",
-  description: "20タスク完了",
-  rarity: "SR",
-  rewardSrc: "/rewards/task-20.png",
-  condition: (c) => c.doneTaskCount >= 20,
-},
-{
-  id: "task-30",
-  title: "習慣の気配",
-  description: "30タスク完了",
-  rarity: "SR",
-  rewardSrc: "/rewards/task-30.png",
-  condition: (c) => c.doneTaskCount >= 30,
-},
-{
-  id: "task-50",
-  title: "タスクハンター",
-  description: "50タスク完了",
-  rarity: "SR",
-  rewardSrc: "/rewards/task-50.png",
-  condition: (c) => c.doneTaskCount >= 50,
-},
-{
-  id: "task-70",
-  title: "タスクの鬼",
-  description: "70タスク完了",
-  rarity: "SR",
-  rewardSrc: "/rewards/task-70.png",
-  condition: (c) => c.doneTaskCount >= 70,
-},
-{
-  id: "level-10",
-  title: "育成の手応え",
-  description: "いずれかの科目Lv10到達",
-  rarity: "SR",
-  rewardSrc: "/rewards/level-10.png",
-  condition: (c) => Object.values(c.subjectStats).some((s) => s.level >= 10),
-},
-{
-  id: "secret-night",
-  title: "夜更かしさん",
-  description: "0時〜4時にタスクを1つ完了した",
-  rarity: "SR",
-  rewardSrc: "/rewards/secret-night.png",
-  secret: true,
-  condition: () => {
-    const h = new Date().getHours();
-    return h >= 0 && h < 4;
+    id: "task-20",
+    title: "習慣の芽生え",
+    description: "20タスク完了",
+    rarity: "SR",
+    rewardSrc: "/rewards/task-20.png",
+    condition: (c) => c.doneTaskCount >= 20,
   },
-},
-{
-  id: "secret-early",
-  title: "早起きは三文の徳",
-  description: "5時〜7時にタスクを1つ完了した",
-  rarity: "SR",
-  rewardSrc: "/rewards/secret-early.png",
-  secret: true,
-  condition: () => {
-    const h = new Date().getHours();
-    return h >= 5 && h < 7;
+  {
+    id: "task-30",
+    title: "習慣の気配",
+    description: "30タスク完了",
+    rarity: "SR",
+    rewardSrc: "/rewards/task-30.png",
+    condition: (c) => c.doneTaskCount >= 30,
+  },
+  {
+    id: "task-50",
+    title: "タスクハンター",
+    description: "50タスク完了",
+    rarity: "SR",
+    rewardSrc: "/rewards/task-50.png",
+    condition: (c) => c.doneTaskCount >= 50,
+  },
+  {
+    id: "task-70",
+    title: "タスクの鬼",
+    description: "70タスク完了",
+    rarity: "SR",
+    rewardSrc: "/rewards/task-70.png",
+    condition: (c) => c.doneTaskCount >= 70,
+  },
+  {
+    id: "subject-600",
+    title: "推し科目",
+    description: "1科目で累計10時間勉強",
+    rarity: "SR",
+    rewardSrc: "/rewards/level-10.png",
+    condition: (c) => hasSubjectMinutes(c, 600),
+  },
+  {
+    id: "secret-night",
+    title: "夜更かしさん",
+    description: "0時〜4時にタスクを1つ完了した",
+    rarity: "SR",
+    rewardSrc: "/rewards/secret-night.png",
+    secret: true,
+    condition: () => {
+      const h = new Date().getHours();
+      return h >= 0 && h < 4;
     },
-},
+  },
+  {
+    id: "secret-early",
+    title: "早起きは三文の徳",
+    description: "5時〜7時にタスクを1つ完了した",
+    rarity: "SR",
+    rewardSrc: "/rewards/secret-early.png",
+    secret: true,
+    condition: () => {
+      const h = new Date().getHours();
+      return h >= 5 && h < 7;
+    },
+  },
 ];
 
 const rewardItems = achievements.map((achievement) => ({
@@ -315,24 +316,6 @@ function formatMinutes(minutes: number) {
   return `${h}時間${m}分`;
 }
 
-function calcLevel(exp: number) {
-  let level = 1;
-  let need = 100;
-
-  while (exp >= need) {
-    level++;
-    need += Math.floor(100 * Math.pow(level, 1.25));
-  }
-
-  const prevNeed = need - Math.floor(100 * Math.pow(level, 1.25));
-
-  return {
-    level,
-    currentExp: exp - prevNeed,
-    nextExp: need - prevNeed,
-  };
-}
-
 function rarityClass(rarity: Rarity) {
   return {
     N: "border-gray-300 bg-gray-50 text-gray-700",
@@ -344,7 +327,6 @@ function rarityClass(rarity: Rarity) {
 
 export default function Page() {
   const [hydrated, setHydrated] = useState(false);
-  const [importing, setImporting] = useState(false);
   const [assistant, setAssistant] = useState(assistantImages[0]);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [exams, setExams] = useState<Exam[]>(initialExams);
@@ -474,44 +456,38 @@ export default function Page() {
     ]);
   }
 
-function applyStudyDiff(subject: string, day: string, diff: number) {
-  if (diff === 0) return;
+  function applyStudyDiff(subject: string, day: string, diff: number) {
+    if (diff === 0) return;
 
-  const subjectKey = subject || "未分類";
+    const subjectKey = subject || "未分類";
 
-  setSubjectStats((prev) => {
-    const next = { ...prev };
+    setSubjectStats((prev) => {
+      const next = { ...prev };
+      const old = next[subjectKey] ?? { totalMinutes: 0 };
+      const newTotalMinutes = Math.max(0, old.totalMinutes + diff);
 
-    const old = next[subjectKey] ?? {
-      exp: 0,
-      level: 1,
-      totalMinutes: 0,
-    };
+      if (newTotalMinutes <= 0) {
+        delete next[subjectKey];
+      } else {
+        next[subjectKey] = { totalMinutes: newTotalMinutes };
+      }
 
-    const newExp = Math.max(0, old.exp + diff);
-    const newTotalMinutes = Math.max(0, old.totalMinutes + diff);
-
-    if (newExp <= 0 && newTotalMinutes <= 0) {
-      delete next[subjectKey];
       return next;
-    }
+    });
 
-    const levelData = calcLevel(newExp);
+    setHistory((prev) => {
+      const nextValue = Math.max(0, (prev[day] ?? 0) + diff);
+      const next = { ...prev };
 
-    next[subjectKey] = {
-      exp: newExp,
-      level: levelData.level,
-      totalMinutes: newTotalMinutes,
-    };
+      if (nextValue <= 0) {
+        delete next[day];
+      } else {
+        next[day] = nextValue;
+      }
 
-    return next;
-  });
-
-  setHistory((prev) => ({
-    ...prev,
-    [day]: Math.max(0, (prev[day] ?? 0) + diff),
-  }));
-}
+      return next;
+    });
+  }
 
   function updateTask(id: string, patch: Partial<Task>) {
     clearConfirming();
@@ -621,7 +597,7 @@ function applyStudyDiff(subject: string, day: string, diff: number) {
     URL.revokeObjectURL(url);
   }
 
-    function importData(file: File | null) {
+  function importData(file: File | null) {
     if (!file) return;
 
     const reader = new FileReader();
@@ -638,24 +614,14 @@ function applyStudyDiff(subject: string, day: string, diff: number) {
 
         const nextTasks = Array.isArray(data.tasks) ? data.tasks : [];
         const nextExams = Array.isArray(data.exams) ? data.exams : initialExams;
-
         const nextUnlockedRewardIds = Array.isArray(data.unlockedRewardIds)
           ? data.unlockedRewardIds
           : [];
-
-        const nextUnlockedAchievementIds = Array.isArray(
-          data.unlockedAchievementIds
-        )
+        const nextUnlockedAchievementIds = Array.isArray(data.unlockedAchievementIds)
           ? data.unlockedAchievementIds
           : [];
-
-        const nextSubjectStats =
-          data.subjectStats && typeof data.subjectStats === "object"
-            ? data.subjectStats
-            : {};
-
-        const nextHistory =
-          data.history && typeof data.history === "object" ? data.history : {};
+        const nextSubjectStats = rebuildSubjectStats(nextTasks);
+        const nextHistory = rebuildHistory(nextTasks);
 
         setTasks(nextTasks);
         setExams(nextExams);
@@ -688,6 +654,41 @@ function applyStudyDiff(subject: string, day: string, diff: number) {
 
     reader.readAsText(file);
   }
+
+  function rebuildSubjectStats(sourceTasks: Task[]): SubjectStats {
+    const next: SubjectStats = {};
+
+    sourceTasks.forEach((task) => {
+      if (!task.done) return;
+
+      const subject = task.subject || "未分類";
+      const minutes = task.minutes || 0;
+      if (minutes <= 0) return;
+
+      next[subject] = {
+        totalMinutes: (next[subject]?.totalMinutes ?? 0) + minutes,
+      };
+    });
+
+    return next;
+  }
+
+  function rebuildHistory(sourceTasks: Task[]): History {
+    const next: History = {};
+
+    sourceTasks.forEach((task) => {
+      if (!task.done) return;
+
+      const day = task.createdAt.slice(0, 10);
+      const minutes = task.minutes || 0;
+      if (minutes <= 0) return;
+
+      next[day] = (next[day] ?? 0) + minutes;
+    });
+
+    return next;
+  }
+
   function sampleData() {
     if (!sampleConfirming) {
       setSampleConfirming(true);
@@ -698,7 +699,6 @@ function applyStudyDiff(subject: string, day: string, diff: number) {
     clearConfirming();
 
     const now = new Date().toISOString();
-    const today = todayKey();
 
     const sampleTasks: Task[] = [
       {
@@ -751,45 +751,10 @@ function applyStudyDiff(subject: string, day: string, diff: number) {
       },
     ];
 
-    const sampleSubjectStats: SubjectStats = {
-      数学: {
-        exp: 12000,
-        level: calcLevel(12000).level,
-        totalMinutes: 12000,
-      },
-      英語: {
-        exp: 800,
-        level: calcLevel(800).level,
-        totalMinutes: 800,
-      },
-      化学: {
-        exp: 800,
-        level: calcLevel(800).level,
-        totalMinutes: 800,
-      },
-      世界史: {
-        exp: 500,
-        level: calcLevel(500).level,
-        totalMinutes: 500,
-      },
-      色彩: {
-        exp: 500,
-        level: calcLevel(500).level,
-        totalMinutes: 500,
-      },
-      危険物: {
-        exp: 500,
-        level: calcLevel(500).level,
-        totalMinutes: 500,
-      },
-    };
-
-    const sampleHistory: History = {
-      [today]: 15100,
-    };
+    const sampleSubjectStats = rebuildSubjectStats(sampleTasks);
+    const sampleHistory = rebuildHistory(sampleTasks);
 
     setTasks(sampleTasks);
-
     setExams([
       {
         id: uid(),
@@ -802,7 +767,6 @@ function applyStudyDiff(subject: string, day: string, diff: number) {
         date: "2026-12-07",
       },
     ]);
-
     setSubjectStats(sampleSubjectStats);
     setHistory(sampleHistory);
     setUnlockedAchievementIds(achievements.map((a) => a.id));
@@ -832,9 +796,6 @@ function applyStudyDiff(subject: string, day: string, diff: number) {
     setDraggingId(null);
   }
 
-  const totalExp = Object.values(subjectStats).reduce((s, v) => s + v.exp, 0);
-  const totalLevel = Object.values(subjectStats).reduce((s, v) => s + v.level, 0);
-
   return (
     <main className="min-h-screen bg-slate-50 p-6 text-slate-900">
       <div className="mx-auto grid max-w-7xl grid-cols-1 gap-6 lg:grid-cols-[320px_1fr]">
@@ -847,7 +808,9 @@ function applyStudyDiff(subject: string, day: string, diff: number) {
             />
             <div className="p-4">
               <h1 className="text-xl font-bold">学習アシスタント</h1>
-              <p className="text-sm text-slate-500">あなたの学習アシスタントです。勉強をサポートします。</p>
+              <p className="text-sm text-slate-500">
+                あなたの学習アシスタントです。勉強をサポートします。
+              </p>
             </div>
           </section>
 
@@ -855,9 +818,8 @@ function applyStudyDiff(subject: string, day: string, diff: number) {
             <h2 className="font-bold">学習ステータス</h2>
             <div className="mt-3 space-y-2 text-sm">
               <p>総勉強時間：{formatMinutes(totalMinutes)}</p>
-              <p>総EXP：{totalExp}</p>
-              <p>総Lv：{totalLevel}</p>
               <p>完了タスク：{doneTasks.length}</p>
+              <p>学習科目：{context.subjectCount}</p>
             </div>
           </section>
 
@@ -894,25 +856,26 @@ function applyStudyDiff(subject: string, day: string, diff: number) {
               >
                 {sampleConfirming ? "もう一度押すと投入" : "サンプルデータ投入"}
               </button>
-              <button
-  onClick={exportData}
-  className="rounded-xl bg-emerald-600 p-2 text-white"
->
-  データを書き出す
-</button>
 
-<label className="cursor-pointer rounded-xl bg-purple-600 p-2 text-center text-white">
-  データを読み込む
-<input
-  type="file"
-  accept=".json,application/json"
-  className="hidden"
-  onChange={(e) => {
-    importData(e.target.files?.[0] ?? null);
-    e.target.value = "";
-  }}
-/>
-</label>
+              <button
+                onClick={exportData}
+                className="rounded-xl bg-emerald-600 p-2 text-white"
+              >
+                データを書き出す
+              </button>
+
+              <label className="cursor-pointer rounded-xl bg-purple-600 p-2 text-center text-white">
+                データを読み込む
+                <input
+                  type="file"
+                  accept=".json,application/json"
+                  className="hidden"
+                  onChange={(e) => {
+                    importData(e.target.files?.[0] ?? null);
+                    e.target.value = "";
+                  }}
+                />
+              </label>
 
               <button
                 onClick={resetData}
@@ -993,40 +956,16 @@ function applyStudyDiff(subject: string, day: string, diff: number) {
           </section>
 
           <section className="rounded-3xl bg-white p-5 shadow">
-            <h2 className="text-xl font-bold">科目Lv</h2>
+            <h2 className="text-xl font-bold">科目別学習時間</h2>
             <div className="mt-4 grid gap-3 md:grid-cols-2">
-              {Object.entries(subjectStats).map(([subject, stat]) => {
-                const lv = calcLevel(stat.exp);
-
-                return (
-                  <div key={subject} className="rounded-2xl border p-3">
-                    <div className="flex justify-between">
-                      <b>{subject}</b>
-                      <span>Lv {stat.level}</span>
-                    </div>
-
-                    <p className="mt-1 text-sm text-slate-500">
-                      累計 {formatMinutes(stat.totalMinutes)}
-                    </p>
-
-                    <div className="mt-2 h-2 rounded-full bg-slate-100">
-                      <div
-                        className="h-2 rounded-full bg-blue-600"
-                        style={{
-                          width: `${Math.min(
-                            100,
-                            (lv.currentExp / lv.nextExp) * 100
-                          )}%`,
-                        }}
-                      />
-                    </div>
-
-                    <p className="mt-1 text-xs text-slate-500">
-                      EXP {lv.currentExp}/{lv.nextExp}
-                    </p>
-                  </div>
-                );
-              })}
+              {Object.entries(subjectStats).map(([subject, stat]) => (
+                <div key={subject} className="rounded-2xl border p-3">
+                  <b>{subject}</b>
+                  <p className="mt-1 text-sm text-slate-500">
+                    累計 {formatMinutes(stat.totalMinutes)}
+                  </p>
+                </div>
+              ))}
             </div>
           </section>
 
@@ -1129,11 +1068,11 @@ function applyStudyDiff(subject: string, day: string, diff: number) {
                     }`}
                   >
                     <b>{a.secret && !unlocked ? "？？？" : a.title}</b>
-<span>{a.secret && !unlocked ? "secret" : a.rarity}</span>
+                    <span>{a.secret && !unlocked ? "secret" : a.rarity}</span>
 
-<p className="text-sm">
-  {a.secret && !unlocked ? "条件不明" : a.description}
-</p>
+                    <p className="text-sm">
+                      {a.secret && !unlocked ? "条件不明" : a.description}
+                    </p>
                     <p className="mt-2 text-xs">
                       {unlocked ? "解除済み" : "未解除"}
                     </p>
