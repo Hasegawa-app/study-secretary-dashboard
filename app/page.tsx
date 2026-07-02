@@ -23,6 +23,8 @@ type SubjectStat = {
   totalMinutes: number;
 };
 
+type AchievementUnlocks = Record<string, string>;
+
 type History = Record<string, number>;
 type SubjectStats = Record<string, SubjectStat>;
 
@@ -310,6 +312,52 @@ function save<T>(key: string, value: T) {
   localStorage.setItem(key, JSON.stringify(value));
 }
 
+function normalizeAchievementUnlocks(value: unknown): AchievementUnlocks {
+  const now = new Date().toISOString();
+
+  if (Array.isArray(value)) {
+    return Object.fromEntries(
+      value.filter((id): id is string => typeof id === "string").map((id) => [id, now])
+    );
+  }
+
+  if (value && typeof value === "object") {
+    const entries = Object.entries(value as Record<string, unknown>)
+      .filter(([id, unlockedAt]) => typeof id === "string" && typeof unlockedAt === "string")
+      .map(([id, unlockedAt]) => [id, unlockedAt as string]);
+
+    return Object.fromEntries(entries);
+  }
+
+  return {};
+}
+
+function loadAchievementUnlocks(): AchievementUnlocks {
+  if (typeof window === "undefined") return {};
+  const raw = localStorage.getItem(ACHIEVEMENT_KEY);
+  if (!raw) return {};
+
+  try {
+    return normalizeAchievementUnlocks(JSON.parse(raw));
+  } catch {
+    return {};
+  }
+}
+
+function formatDateTime(value?: string) {
+  if (!value) return "日時不明";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "日時不明";
+
+  return new Intl.DateTimeFormat("ja-JP", {
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(date);
+}
+
 function formatMinutes(minutes: number) {
   const h = Math.floor(minutes / 60);
   const m = minutes % 60;
@@ -331,10 +379,10 @@ export default function Page() {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [exams, setExams] = useState<Exam[]>(initialExams);
   const [unlockedRewardIds, setUnlockedRewardIds] = useState<string[]>([]);
-  const [unlockedAchievementIds, setUnlockedAchievementIds] = useState<string[]>([]);
+  const [achievementUnlocks, setAchievementUnlocks] = useState<AchievementUnlocks>({});
   const [subjectStats, setSubjectStats] = useState<SubjectStats>({});
   const [history, setHistory] = useState<History>({});
-  const [selectedReward, setSelectedReward] = useState<string | null>(null);
+  const [selectedRewardId, setSelectedRewardId] = useState<string | null>(null);
 
   const [notice, setNotice] = useState<Achievement | null>(null);
   const [noticeQueue, setNoticeQueue] = useState<Achievement[]>([]);
@@ -362,7 +410,7 @@ export default function Page() {
     setTasks(load<Task[]>(TASK_KEY, []));
     setExams(load<Exam[]>(EXAM_KEY, initialExams));
     setUnlockedRewardIds(load<string[]>(REWARD_KEY, []));
-    setUnlockedAchievementIds(load<string[]>(ACHIEVEMENT_KEY, []));
+    setAchievementUnlocks(loadAchievementUnlocks());
     setSubjectStats(load<SubjectStats>(SUBJECT_KEY, {}));
     setHistory(load<History>(HISTORY_KEY, {}));
 
@@ -386,8 +434,8 @@ export default function Page() {
 
   useEffect(() => {
     if (!hydrated) return;
-    save(ACHIEVEMENT_KEY, unlockedAchievementIds);
-  }, [hydrated, unlockedAchievementIds]);
+    save(ACHIEVEMENT_KEY, achievementUnlocks);
+  }, [hydrated, achievementUnlocks]);
 
   useEffect(() => {
     if (!hydrated) return;
@@ -402,6 +450,8 @@ export default function Page() {
   const doneTasks = tasks.filter((t) => t.done);
   const totalMinutes = doneTasks.reduce((sum, t) => sum + (t.minutes || 0), 0);
 
+  const unlockedAchievementIds = Object.keys(achievementUnlocks);
+
   const context: AchievementContext = {
     totalMinutes,
     doneTaskCount: doneTasks.length,
@@ -414,15 +464,20 @@ export default function Page() {
     if (!hydrated) return;
 
     const newly = achievements.filter(
-      (a) => !unlockedAchievementIds.includes(a.id) && a.condition(context)
+      (a) => !achievementUnlocks[a.id] && a.condition(context)
     );
 
     if (newly.length === 0) return;
 
-    setUnlockedAchievementIds((prev) => [
-      ...prev,
-      ...newly.map((a) => a.id).filter((id) => !prev.includes(id)),
-    ]);
+    const unlockedAt = new Date().toISOString();
+
+    setAchievementUnlocks((prev) => {
+      const next = { ...prev };
+      newly.forEach((a) => {
+        if (!next[a.id]) next[a.id] = unlockedAt;
+      });
+      return next;
+    });
 
     setUnlockedRewardIds((prev) => [
       ...prev,
@@ -435,7 +490,7 @@ export default function Page() {
       if (prev) return prev;
       return newly[0];
     });
-  }, [hydrated, tasks, subjectStats, history, unlockedAchievementIds]);
+  }, [hydrated, tasks, subjectStats, history, achievementUnlocks]);
 
   function closeNotice() {
     setNoticeQueue((prev) => {
@@ -587,12 +642,12 @@ export default function Page() {
     setTasks([]);
     setExams(initialExams);
     setUnlockedRewardIds([]);
-    setUnlockedAchievementIds([]);
+    setAchievementUnlocks({});
     setSubjectStats({});
     setHistory({});
     setNotice(null);
     setNoticeQueue([]);
-    setSelectedReward(null);
+    setSelectedRewardId(null);
   }
 
   function exportData() {
@@ -600,7 +655,7 @@ export default function Page() {
       tasks,
       exams,
       unlockedRewardIds,
-      unlockedAchievementIds,
+      achievementUnlocks,
       subjectStats,
       history,
     };
@@ -639,29 +694,27 @@ export default function Page() {
         const nextUnlockedRewardIds = Array.isArray(data.unlockedRewardIds)
           ? data.unlockedRewardIds
           : [];
-        const nextUnlockedAchievementIds = Array.isArray(data.unlockedAchievementIds)
-          ? data.unlockedAchievementIds
-          : [];
+        const nextAchievementUnlocks = normalizeAchievementUnlocks(data.achievementUnlocks ?? data.unlockedAchievementIds);
         const nextSubjectStats = rebuildSubjectStats(nextTasks);
         const nextHistory = rebuildHistory(nextTasks);
 
         setTasks(nextTasks);
         setExams(nextExams);
         setUnlockedRewardIds(nextUnlockedRewardIds);
-        setUnlockedAchievementIds(nextUnlockedAchievementIds);
+        setAchievementUnlocks(nextAchievementUnlocks);
         setSubjectStats(nextSubjectStats);
         setHistory(nextHistory);
 
         save(TASK_KEY, nextTasks);
         save(EXAM_KEY, nextExams);
         save(REWARD_KEY, nextUnlockedRewardIds);
-        save(ACHIEVEMENT_KEY, nextUnlockedAchievementIds);
+        save(ACHIEVEMENT_KEY, nextAchievementUnlocks);
         save(SUBJECT_KEY, nextSubjectStats);
         save(HISTORY_KEY, nextHistory);
 
         setNotice(null);
         setNoticeQueue([]);
-        setSelectedReward(null);
+        setSelectedRewardId(null);
 
         alert("データを読み込みました");
       } catch (error) {
@@ -791,7 +844,10 @@ export default function Page() {
     ]);
     setSubjectStats(sampleSubjectStats);
     setHistory(sampleHistory);
-    setUnlockedAchievementIds(achievements.map((a) => a.id));
+    const nowUnlockedAt = new Date().toISOString();
+    setAchievementUnlocks(
+      Object.fromEntries(achievements.map((a) => [a.id, nowUnlockedAt]))
+    );
     setUnlockedRewardIds(achievements.map((a) => a.id));
     setNotice(null);
     setNoticeQueue([]);
@@ -1032,26 +1088,19 @@ export default function Page() {
                     className="rounded-xl border p-2"
                   />
 
-                  <label
-  data-task-id={task.id}
-  data-field="done"
-  className={`flex cursor-pointer items-center justify-center rounded-xl border px-3 py-2 text-sm font-bold transition ${
-    task.done
-      ? "border-emerald-400 bg-emerald-100 text-emerald-700"
-      : "border-slate-300 bg-slate-50 text-slate-600"
-  }`}
->
-  <input
-    type="checkbox"
-    checked={task.done}
-    onChange={(e) => {
-      updateTask(task.id, { done: e.target.checked });
-      if (e.target.checked) flashCompletedTask(task.id);
-    }}
-    className="sr-only"
-  />
-  {task.done ? "記録済み" : "記録"}
-</label>
+                  <label className="flex items-center justify-center gap-2 text-sm">
+                    <input
+                      data-task-id={task.id}
+                      data-field="done"
+                      type="checkbox"
+                      checked={task.done}
+                      onChange={(e) => {
+                        updateTask(task.id, { done: e.target.checked });
+                        if (e.target.checked) flashCompletedTask(task.id);
+                      }}
+                    />
+                    完了
+                  </label>
 
                   <button
                     onClick={() => deleteTask(task.id)}
@@ -1167,7 +1216,7 @@ export default function Page() {
             <h2 className="text-xl font-bold">実績</h2>
             <div className="mt-4 grid gap-3 md:grid-cols-3">
               {achievements.map((a) => {
-                const unlocked = unlockedAchievementIds.includes(a.id);
+                const unlocked = Boolean(achievementUnlocks[a.id]);
 
                 return (
                   <div
@@ -1183,7 +1232,9 @@ export default function Page() {
                       {a.secret && !unlocked ? "条件不明" : a.description}
                     </p>
                     <p className="mt-2 text-xs">
-                      {unlocked ? "解除済み" : "未解除"}
+                      {unlocked
+                        ? `${formatDateTime(achievementUnlocks[a.id])}に獲得`
+                        : "未解除"}
                     </p>
                   </div>
                 );
@@ -1212,7 +1263,7 @@ export default function Page() {
                     key={reward.id}
                     onClick={() => {
                       clearConfirming();
-                      if (unlocked) setSelectedReward(reward.src);
+                      if (unlocked) setSelectedRewardId(reward.id);
                     }}
                     className="aspect-square overflow-hidden rounded-2xl border bg-slate-100"
                     title={reward.title}
@@ -1267,18 +1318,62 @@ export default function Page() {
         </div>
       </div>
 
-      {selectedReward && (
-        <div
-          onClick={() => setSelectedReward(null)}
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-6"
-        >
-          <img
-            src={selectedReward}
-            alt="reward"
-            className="max-h-[90vh] max-w-[90vw] rounded-3xl object-contain"
-          />
-        </div>
-      )}
+      {selectedRewardId && (() => {
+        const achievement = achievements.find((a) => a.id === selectedRewardId);
+        if (!achievement) return null;
+
+        return (
+          <div
+            onClick={() => setSelectedRewardId(null)}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-6"
+          >
+            <div
+              onClick={(e) => e.stopPropagation()}
+              className="w-full max-w-md overflow-hidden rounded-[2rem] bg-white shadow-2xl"
+            >
+              <img
+                src={achievement.rewardSrc}
+                alt={achievement.title}
+                className="max-h-[60vh] w-full object-contain bg-slate-100"
+              />
+
+              <div className="space-y-3 p-5">
+                <div className="flex items-center justify-between gap-3">
+                  <h2 className="text-xl font-black text-slate-900">
+                    {achievement.title}
+                  </h2>
+                  <span
+                    className={`rounded-full border px-3 py-1 text-xs font-bold ${rarityClass(
+                      achievement.rarity
+                    )}`}
+                  >
+                    {achievement.rarity}
+                  </span>
+                </div>
+
+                <div className="rounded-2xl bg-slate-50 p-3 text-sm text-slate-700">
+                  <p className="font-bold text-slate-900">解除条件</p>
+                  <p className="mt-1">{achievement.description}</p>
+                </div>
+
+                <div className="rounded-2xl bg-slate-50 p-3 text-sm text-slate-700">
+                  <p className="font-bold text-slate-900">獲得日時</p>
+                  <p className="mt-1">
+                    {formatDateTime(achievementUnlocks[achievement.id])}
+                  </p>
+                </div>
+
+                <button
+                  onClick={() => setSelectedRewardId(null)}
+                  className="w-full rounded-2xl bg-slate-900 px-5 py-3 font-bold text-white"
+                >
+                  閉じる
+                </button>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
 
       {notice && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-6">
