@@ -35,6 +35,7 @@ type AchievementContext = {
   subjectStats: SubjectStats;
   history: History;
   lastTaskMinutes: number;
+  galleryOpenCount: number;
 };
 
 type Achievement = {
@@ -283,6 +284,14 @@ const achievements: Achievement[] = [
     },
   },
   {
+  id: "collector",
+  title: "コレクター",
+  description: "ギャラリーを20回開いた",
+  rarity: "R",
+  rewardSrc: "/rewards/collector.png",
+  condition: (c) => c.galleryOpenCount >= 20,
+},
+  {
   id: "imaginary-time",
   title: "そんなことしてる場合？",
   description: "マイナス時間を記録",
@@ -468,6 +477,7 @@ export default function Page() {
     subjectCount: new Set(doneTasks.map((t) => t.subject || "未分類")).size,
     subjectStats,
     history,
+    galleryOpenCount,
     lastTaskMinutes: doneTasks.length > 0 ? doneTasks[doneTasks.length - 1].minutes || 0 : 0,
   };
 
