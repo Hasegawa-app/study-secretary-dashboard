@@ -53,6 +53,7 @@ const REWARD_KEY = "study-unlocked-rewards";
 const ACHIEVEMENT_KEY = "study-achievements";
 const SUBJECT_KEY = "study-subject-stats";
 const HISTORY_KEY = "study-history";
+const [galleryOpenCount, setGalleryOpenCount] = useState(0);
 
 const assistantImages = [
   "/assistants/assistant01.png",
@@ -1280,8 +1281,11 @@ export default function Page() {
                     key={reward.id}
                     onClick={() => {
                       clearConfirming();
-                      if (unlocked) setSelectedRewardId(reward.id);
-                    }}
+                      if (unlocked) {
+                        setGalleryOpenCount((count) => count + 1);
+                        setSelectedRewardId(reward.id);
+                      }
+                  }}
                     className="aspect-square overflow-hidden rounded-2xl border bg-slate-100"
                     title={reward.title}
                   >
