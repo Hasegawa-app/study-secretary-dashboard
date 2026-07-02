@@ -282,14 +282,6 @@ const achievements: Achievement[] = [
     },
   },
   {
-  id: "one-task-30",
-  title: "30分一本勝負",
-  description: "30分以上の学習を1回記録",
-  rarity: "N",
-  rewardSrc: "/rewards/one-task-30.png",
-  condition: (c) => c.lastTaskMinutes >= 30,
-},
-{
   id: "imaginary-time",
   title: "そんなことしてる場合？",
   description: "マイナス時間を記録",
@@ -1094,11 +1086,11 @@ export default function Page() {
                     data-field="minutes"
                     type="number"
                     value={task.minutes || ""}
-                    onChange={(e) =>
-                      updateTask(task.id, {
-                        minutes: Number(e.target.value),
-                      })
-                    }
+                   onChange={(e) =>
+  updateTask(task.id, {
+    minutes: Math.max(0, Number(e.target.value)),
+  })
+}
                     onKeyDown={(e) =>
                       handleTaskInputKeyDown(e, task.id, "minutes")
                     }
