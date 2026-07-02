@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type KeyboardEvent } from "react";
 
 type Task = {
   id: string;
@@ -341,6 +341,7 @@ export default function Page() {
 
   const [draggingId, setDraggingId] = useState<string | null>(null);
   const [newTaskId, setNewTaskId] = useState<string | null>(null);
+  const [completedFlashId, setCompletedFlashId] = useState<string | null>(null);
 
   const newTaskRef = useRef<HTMLDivElement | null>(null);
   const newTaskSubjectInputRef = useRef<HTMLInputElement | null>(null);
@@ -817,6 +818,55 @@ export default function Page() {
     setDraggingId(null);
   }
 
+  function flashCompletedTask(id: string) {
+    setCompletedFlashId(id);
+    window.setTimeout(() => {
+      setCompletedFlashId((current) => (current === id ? null : current));
+    }, 900);
+  }
+
+  function focusTaskField(taskId: string, field: string) {
+    const selector = `[data-task-id="${taskId}"][data-field="${field}"]`;
+    const target = document.querySelector<HTMLElement>(selector);
+    target?.focus();
+  }
+
+  function handleTaskInputKeyDown(
+    e: KeyboardEvent<HTMLInputElement>,
+    taskId: string,
+    field: "subject" | "title" | "minutes"
+  ) {
+    if (e.key !== "Enter") return;
+
+    e.preventDefault();
+
+    if (field === "subject") {
+      focusTaskField(taskId, "title");
+      return;
+    }
+
+    if (field === "title") {
+      focusTaskField(taskId, "minutes");
+      return;
+    }
+
+    focusTaskField(taskId, "done");
+  }
+
+  const subjectSuggestions = Array.from(
+    new Set(
+      [
+        ...Object.keys(subjectStats),
+        ...tasks.map((task) => task.subject.trim()).filter(Boolean),
+      ].sort((a, b) => a.localeCompare(b, "ja"))
+    )
+  );
+
+  const sortedTasks = [...tasks].sort((a, b) => {
+    if (a.done === b.done) return 0;
+    return a.done ? 1 : -1;
+  });
+
   return (
     <main className="min-h-screen bg-slate-50 p-6 text-slate-900">
       <div className="mx-auto grid max-w-7xl grid-cols-1 gap-6 lg:grid-cols-[320px_1fr]">
@@ -914,8 +964,14 @@ export default function Page() {
           <section className="rounded-3xl bg-white p-5 shadow">
             <h2 className="text-xl font-bold">タスク</h2>
 
+            <datalist id="subject-suggestions">
+              {subjectSuggestions.map((subject) => (
+                <option key={subject} value={subject} />
+              ))}
+            </datalist>
+
             <div className="mt-4 space-y-3">
-              {tasks.map((task) => (
+              {sortedTasks.map((task) => (
                 <div
                   key={task.id}
                   ref={task.id === newTaskId ? newTaskRef : null}
@@ -923,28 +979,47 @@ export default function Page() {
                   onDragStart={() => setDraggingId(task.id)}
                   onDragOver={(e) => e.preventDefault()}
                   onDrop={() => reorder(task.id)}
-                  className="grid gap-2 rounded-2xl border bg-white p-3 md:grid-cols-[1fr_2fr_100px_70px_60px]"
+                  className={`grid gap-2 rounded-2xl border p-3 transition-all duration-300 md:grid-cols-[1fr_2fr_100px_70px_60px] ${
+                    completedFlashId === task.id
+                      ? "border-emerald-300 bg-emerald-50 shadow-md"
+                      : task.done
+                      ? "bg-slate-50 opacity-75"
+                      : "bg-white"
+                  }`}
                 >
                   <input
                     ref={task.id === newTaskId ? newTaskSubjectInputRef : null}
+                    data-task-id={task.id}
+                    data-field="subject"
+                    list="subject-suggestions"
                     value={task.subject}
                     onChange={(e) =>
                       updateTask(task.id, { subject: e.target.value })
+                    }
+                    onKeyDown={(e) =>
+                      handleTaskInputKeyDown(e, task.id, "subject")
                     }
                     placeholder="科目"
                     className="rounded-xl border p-2"
                   />
 
                   <input
+                    data-task-id={task.id}
+                    data-field="title"
                     value={task.title}
                     onChange={(e) =>
                       updateTask(task.id, { title: e.target.value })
+                    }
+                    onKeyDown={(e) =>
+                      handleTaskInputKeyDown(e, task.id, "title")
                     }
                     placeholder="タスク名"
                     className="rounded-xl border p-2"
                   />
 
                   <input
+                    data-task-id={task.id}
+                    data-field="minutes"
                     type="number"
                     value={task.minutes || ""}
                     onChange={(e) =>
@@ -952,17 +1027,23 @@ export default function Page() {
                         minutes: Number(e.target.value),
                       })
                     }
+                    onKeyDown={(e) =>
+                      handleTaskInputKeyDown(e, task.id, "minutes")
+                    }
                     placeholder="分"
                     className="rounded-xl border p-2"
                   />
 
                   <label className="flex items-center justify-center gap-2 text-sm">
                     <input
+                      data-task-id={task.id}
+                      data-field="done"
                       type="checkbox"
                       checked={task.done}
-                      onChange={(e) =>
-                        updateTask(task.id, { done: e.target.checked })
-                      }
+                      onChange={(e) => {
+                        updateTask(task.id, { done: e.target.checked });
+                        if (e.target.checked) flashCompletedTask(task.id);
+                      }}
                     />
                     完了
                   </label>
@@ -981,7 +1062,7 @@ export default function Page() {
           <section className="rounded-3xl bg-white p-5 shadow">
             <h2 className="text-xl font-bold">科目別学習時間</h2>
             <div className="mt-4 grid gap-3 md:grid-cols-2">
-              {Object.entries(subjectStats).map(([subject, stat]) => (
+              {(Object.entries(subjectStats) as [string, SubjectStat][]).map(([subject, stat]) => (
                 <div key={subject} className="rounded-2xl border p-3">
                   <b>{subject}</b>
                   <p className="mt-1 text-sm text-slate-500">
