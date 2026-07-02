@@ -979,13 +979,11 @@ export default function Page() {
                   onDragStart={() => setDraggingId(task.id)}
                   onDragOver={(e) => e.preventDefault()}
                   onDrop={() => reorder(task.id)}
-                  className={`grid gap-2 rounded-2xl border p-3 transition-all duration-300 md:grid-cols-[1fr_2fr_100px_70px_60px] ${
-                    completedFlashId === task.id
-                      ? "border-emerald-300 bg-emerald-50 shadow-md"
-                      : task.done
-                      ? "bg-slate-50 opacity-75"
-                      : "bg-white"
-                  }`}
+                 className={`grid gap-2 rounded-2xl border p-3 transition-all duration-300 md:grid-cols-[1fr_2fr_100px_70px_60px] ${
+                  task.done
+                  ? "border-emerald-400 bg-emerald-50 shadow-lg ring-2 ring-emerald-200"
+                  : "bg-white"
+                 } ${task.id === completedFlashId ? "animate-flash" : ""}`}
                 >
                   <input
                     ref={task.id === newTaskId ? newTaskSubjectInputRef : null}
