@@ -399,17 +399,11 @@ function pickRandom(list: string[]) {
 function getAssistantMessage(task: Task) {
   const minutes = task.minutes || 0;
 
-  const zeroMessages = [
-    "今日は記録だけでも来たんやね。",
-    "0分でも、アプリを開いた事実は残る。",
-    "今日は顔出しの日やね。",
-  ];
-
   const shortMessages = [
     "短くても、ちゃんと一歩進んでる。",
-    "今日は助走の日やね。",
+    "今日は助走の日ね。",
     "来ただけでもえらい。",
-    "小さく積む日も大事やで。",
+    "小さく積む日も大事よ。",
     "無理せず続けるの、わりと強い。",
   ];
 
@@ -424,18 +418,17 @@ function getAssistantMessage(task: Task) {
   const longMessages = [
     "しっかり集中できたね。",
     "これはちゃんと頑張った日。",
-    "今日はかなり進んだんちゃう？",
-    "ここまでやったなら、休むのも仕事やで。",
+    "今日はかなり進んだんじゃない？",
+    "ここまでやったなら、休むのも仕事よ。",
     "だいぶ積んだね。ちゃんと記録しとく。",
   ];
 
   const veryLongMessages = [
-    "かなり頑張ったね。今日はちゃんと休んでな。",
+    "かなり頑張ったね。今日はちゃんと休んでね。",
     "長時間おつかれさま。これは普通にえらい。",
-    "今日は本気の日やったね。無理しすぎ注意やで。",
+    "今日は本気の日だったね。無理しすぎに注意。",
   ];
 
-  if (minutes <= 0) return pickRandom(zeroMessages);
   if (minutes < 30) return pickRandom(shortMessages);
   if (minutes < 90) return pickRandom(normalMessages);
   if (minutes < 180) return pickRandom(longMessages);
