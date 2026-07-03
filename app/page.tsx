@@ -196,14 +196,6 @@ const achievements: Achievement[] = [
     condition: (c) => hasSubjectMinutes(c, 300),
   },
   {
-    id: "lucky-7",
-    title: "ラッキー!",
-    description: "累計777分勉強",
-    rarity: "SR",
-    rewardSrc: "/rewards/lucky-7.png",
-    condition: (c) => c.totalMinutes >= 777,
-  },
-  {
     id: "study-1200",
     title: "積み上げる者",
     description: "累計20時間勉強",
@@ -302,7 +294,7 @@ const achievements: Achievement[] = [
   {
   id: "imaginary-time",
   title: "そんなことしてる場合？",
-  description: "わざとマイナス時間を記録",
+  description: "マイナス時間を記録",
   rarity: "SSR",
   rewardSrc: "/rewards/imaginary-time.png",
   condition: (c) => c.lastTaskMinutes < 0,
@@ -400,6 +392,56 @@ function rarityClass(rarity: Rarity) {
   }[rarity];
 }
 
+function pickRandom(list: string[]) {
+  return list[Math.floor(Math.random() * list.length)];
+}
+
+function getAssistantMessage(task: Task) {
+  const minutes = task.minutes || 0;
+
+  const zeroMessages = [
+    "今日は記録だけでも来たんやね。",
+    "0分でも、アプリを開いた事実は残る。",
+    "今日は顔出しの日やね。",
+  ];
+
+  const shortMessages = [
+    "短くても、ちゃんと一歩進んでる。",
+    "今日は助走の日やね。",
+    "来ただけでもえらい。",
+    "小さく積む日も大事やで。",
+    "無理せず続けるの、わりと強い。",
+  ];
+
+  const normalMessages = [
+    "いい感じに積めたね。",
+    "今日の分、ちゃんと残ったよ。",
+    "無理なく続いてるね。",
+    "このくらい積める日、かなり良い。",
+    "ちゃんと勉強の形になってる。",
+  ];
+
+  const longMessages = [
+    "しっかり集中できたね。",
+    "これはちゃんと頑張った日。",
+    "今日はかなり進んだんちゃう？",
+    "ここまでやったなら、休むのも仕事やで。",
+    "だいぶ積んだね。ちゃんと記録しとく。",
+  ];
+
+  const veryLongMessages = [
+    "かなり頑張ったね。今日はちゃんと休んでな。",
+    "長時間おつかれさま。これは普通にえらい。",
+    "今日は本気の日やったね。無理しすぎ注意やで。",
+  ];
+
+  if (minutes <= 0) return pickRandom(zeroMessages);
+  if (minutes < 30) return pickRandom(shortMessages);
+  if (minutes < 90) return pickRandom(normalMessages);
+  if (minutes < 180) return pickRandom(longMessages);
+  return pickRandom(veryLongMessages);
+}
+
 export default function Page() {
   const [hydrated, setHydrated] = useState(false);
   const [assistant, setAssistant] = useState(assistantImages[0]);
@@ -410,6 +452,7 @@ export default function Page() {
   const [subjectStats, setSubjectStats] = useState<SubjectStats>({});
   const [history, setHistory] = useState<History>({});
   const [selectedRewardId, setSelectedRewardId] = useState<string | null>(null);
+  const [assistantMessage, setAssistantMessage] = useState<string | null>(null);
   const [galleryOpenCount, setGalleryOpenCount] = useState(0);
 
   const [notice, setNotice] = useState<Achievement | null>(null);
@@ -484,7 +527,6 @@ export default function Page() {
   const doneTasks = tasks.filter((t) => t.done);
   const totalMinutes = doneTasks.reduce((sum, t) => sum + (t.minutes || 0), 0);
 
-  const unlockedAchievementIds = Object.keys(achievementUnlocks);
 
   const context: AchievementContext = {
     totalMinutes,
@@ -685,6 +727,7 @@ export default function Page() {
     setNotice(null);
     setNoticeQueue([]);
     setSelectedRewardId(null);
+    setAssistantMessage(null);
     setGalleryOpenCount(0);
   }
 
@@ -756,6 +799,7 @@ export default function Page() {
         setNotice(null);
         setNoticeQueue([]);
         setSelectedRewardId(null);
+        setAssistantMessage(null);
         setGalleryOpenCount(nextGalleryOpenCount);
         save(GALLERY_COUNT_KEY, nextGalleryOpenCount);
 
@@ -894,6 +938,7 @@ export default function Page() {
     setUnlockedRewardIds(achievements.map((a) => a.id));
     setNotice(null);
     setNoticeQueue([]);
+    setAssistantMessage(null);
     setGalleryOpenCount(0);
   }
 
@@ -982,6 +1027,12 @@ export default function Page() {
               <p className="text-sm text-slate-500">
                 あなたの学習アシスタントです。勉強をサポートします。
               </p>
+
+              {assistantMessage && (
+                <div className="mt-3 rounded-2xl bg-slate-100 p-3 text-sm leading-relaxed text-slate-700">
+                  {assistantMessage}
+                </div>
+              )}
             </div>
           </section>
 
@@ -1146,7 +1197,10 @@ export default function Page() {
     checked={task.done}
     onChange={(e) => {
       updateTask(task.id, { done: e.target.checked });
-      if (e.target.checked) flashCompletedTask(task.id);
+      if (e.target.checked) {
+        flashCompletedTask(task.id);
+        setAssistantMessage(getAssistantMessage(task));
+      }
     }}
     className="sr-only"
   />
