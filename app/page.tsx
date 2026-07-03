@@ -196,6 +196,14 @@ const achievements: Achievement[] = [
     condition: (c) => hasSubjectMinutes(c, 300),
   },
   {
+    id: "lucky-7",
+    title: "ラッキー7!",
+    description: "累計777分勉強",
+    rarity: "SR",
+    rewardSrc: "/rewards/lucky-7.png",
+    condition: (c) => c.totalMinutes >= 777,
+  },
+  {
     id: "study-1200",
     title: "積み上げる者",
     description: "累計20時間勉強",
