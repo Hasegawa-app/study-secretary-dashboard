@@ -197,7 +197,7 @@ const achievements: Achievement[] = [
   },
   {
     id: "lucky-7",
-    title: "ラッキー7!",
+    title: "ラッキー!",
     description: "累計777分勉強",
     rarity: "SR",
     rewardSrc: "/rewards/lucky-7.png",
@@ -302,7 +302,7 @@ const achievements: Achievement[] = [
   {
   id: "imaginary-time",
   title: "そんなことしてる場合？",
-  description: "マイナス時間を記録",
+  description: "わざとマイナス時間を記録",
   rarity: "SSR",
   rewardSrc: "/rewards/imaginary-time.png",
   condition: (c) => c.lastTaskMinutes < 0,
