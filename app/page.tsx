@@ -15,6 +15,7 @@ type Exam = {
   id: string;
   name: string;
   date: string;
+  passed: boolean;
 };
 
 type Rarity = "N" | "R" | "SR" | "SSR";
@@ -36,6 +37,9 @@ type AchievementContext = {
   history: History;
   lastTaskMinutes: number;
   galleryOpenCount: number;
+  examCount: number;
+  examPassedCount: number;
+  hasExamWithin7Days: boolean;
 };
 
 type Achievement = {
@@ -179,6 +183,14 @@ const achievements: Achievement[] = [
     rewardSrc: "/rewards/subject-3.png",
     condition: (c) => c.subjectCount >= 3,
   },
+    {
+    id: "subject-4",
+    title: "四足のわらじ",
+    description: "4科目以上学習",
+    rarity: "R",
+    rewardSrc: "/rewards/subject-4.png",
+    condition: (c) => c.subjectCount >= 4,
+  },
   {
     id: "subject-60",
     title: "得意科目の芽",
@@ -244,6 +256,14 @@ const achievements: Achievement[] = [
     condition: (c) => c.totalMinutes >= 2400,
   },
   {
+    id: "study-2700",
+    title: "積み上げの極み",
+    description: "累計45時間勉強",
+    rarity: "SR",
+    rewardSrc: "/rewards/study-2700.png",
+    condition: (c) => c.totalMinutes >= 2700,
+  },
+  {
     id: "study-3000",
     title: "50時間の壁",
     description: "累計50時間勉強",
@@ -274,6 +294,14 @@ const achievements: Achievement[] = [
     rarity: "SR",
     rewardSrc: "/rewards/task-50.png",
     condition: (c) => c.doneTaskCount >= 50,
+  },
+   {
+    id: "task-60",
+    title: "タスクマスター",
+    description: "60タスク完了",
+    rarity: "SR",
+    rewardSrc: "/rewards/task-60.png",
+    condition: (c) => c.doneTaskCount >= 60,
   },
   {
     id: "task-70",
@@ -322,6 +350,30 @@ const achievements: Achievement[] = [
   rarity: "R",
   rewardSrc: "/rewards/collector.png",
   condition: (c) => c.galleryOpenCount >= 20,
+},
+  {
+  id: "exam-registered",
+  title: "戦場を決めた",
+  description: "試験予定を1件登録",
+  rarity: "N",
+  rewardSrc: "/rewards/exam-registered.png",
+  condition: (c) => c.examCount >= 1,
+},
+  {
+  id: "exam-week",
+  title: "決戦前夜",
+  description: "試験日まで7日以内",
+  rarity: "R",
+  rewardSrc: "/rewards/exam-week.png",
+  condition: (c) => c.hasExamWithin7Days,
+},
+  {
+  id: "exam-passed",
+  title: "合格通知",
+  description: "試験に1つ合格",
+  rarity: "SSR",
+  rewardSrc: "/rewards/exam-passed.png",
+  condition: (c) => c.examPassedCount >= 1,
 },
   {
   id: "imaginary-time",
@@ -416,6 +468,19 @@ function loadAchievementUnlocks(): AchievementUnlocks {
   }
 }
 
+function normalizeExams(value: unknown): Exam[] {
+  if (!Array.isArray(value)) return initialExams;
+
+  return value
+    .filter((exam): exam is Partial<Exam> => Boolean(exam) && typeof exam === "object")
+    .map((exam) => ({
+      id: typeof exam.id === "string" ? exam.id : uid(),
+      name: typeof exam.name === "string" ? exam.name : "",
+      date: typeof exam.date === "string" ? exam.date : todayKey(),
+      passed: typeof exam.passed === "boolean" ? exam.passed : false,
+    }));
+}
+
 function formatDateTime(value?: string) {
   if (!value) return "日時不明";
   const date = new Date(value);
@@ -493,18 +558,18 @@ function getAssistantMessage(task: Task) {
   const minutes = task.minutes || 0;
 
   const shortMessages = [
-    "短くても、ちゃんと一歩進んでる。",
+    "短くても、ちゃんと一歩進んでるね。",
     "今日は助走の日ね。",
     "来ただけでもえらい。",
     "小さく積む日も大事よ。",
-    "無理せず続けるの、わりと強い。",
+    "無理せず続けるのもいいんじゃない？",
   ];
 
   const normalMessages = [
     "いい感じに積めたね。",
     "今日の分、ちゃんと残ったよ。",
     "無理なく続いてるね。",
-    "このくらい積める日、かなり良い。",
+    "このくらい積める日ってかなり良いと思う。",
     "ちゃんと勉強の形になってる。",
   ];
 
@@ -567,7 +632,7 @@ export default function Page() {
 
   useEffect(() => {
     setTasks(load<Task[]>(TASK_KEY, []));
-    setExams(load<Exam[]>(EXAM_KEY, initialExams));
+    setExams(normalizeExams(load<unknown>(EXAM_KEY, initialExams)));
 
     const loadedUnlockedRewardIds = load<string[]>(REWARD_KEY, []);
     setUnlockedRewardIds(loadedUnlockedRewardIds);
@@ -648,6 +713,13 @@ export default function Page() {
       )
     : 100;
 
+  const hasExamWithin7Days = exams.some((exam) => {
+    const days = Math.ceil(
+      (new Date(exam.date).getTime() - Date.now()) / 1000 / 60 / 60 / 24
+    );
+    return days >= 0 && days <= 7;
+  });
+
   const context: AchievementContext = {
     totalMinutes,
     doneTaskCount: doneTasks.length,
@@ -655,6 +727,9 @@ export default function Page() {
     subjectStats,
     history,
     galleryOpenCount,
+    examCount: exams.length,
+    examPassedCount: exams.filter((exam) => exam.passed).length,
+    hasExamWithin7Days,
     lastTaskMinutes: doneTasks.length > 0 ? doneTasks[doneTasks.length - 1].minutes || 0 : 0,
   };
 
@@ -688,7 +763,7 @@ export default function Page() {
       if (prev) return prev;
       return newly[0];
     });
-  }, [hydrated, tasks, subjectStats, history, achievementUnlocks, galleryOpenCount]);
+  }, [hydrated, tasks, exams, subjectStats, history, achievementUnlocks, galleryOpenCount]);
 
   function closeNotice() {
     setNoticeQueue((prev) => {
@@ -861,6 +936,7 @@ export default function Page() {
         id: uid(),
         name: "",
         date: todayKey(),
+        passed: false,
       },
     ]);
   }
@@ -936,7 +1012,7 @@ export default function Page() {
         const data = JSON.parse(raw);
 
         const nextTasks = Array.isArray(data.tasks) ? data.tasks : [];
-        const nextExams = Array.isArray(data.exams) ? data.exams : initialExams;
+        const nextExams = normalizeExams(data.exams);
         const nextUnlockedRewardIds = Array.isArray(data.unlockedRewardIds)
           ? data.unlockedRewardIds
           : [];
@@ -1086,11 +1162,13 @@ export default function Page() {
         id: uid(),
         name: "数検1級一次",
         date: "2026-10-25",
+        passed: false,
       },
       {
         id: uid(),
         name: "TOEIC",
         date: "2026-12-07",
+        passed: false,
       },
     ]);
     setSubjectStats(sampleSubjectStats);
@@ -1526,7 +1604,7 @@ export default function Page() {
                 return (
                   <div
                     key={exam.id}
-                    className="grid gap-2 rounded-2xl border p-3 md:grid-cols-[1fr_160px_100px_60px]"
+                    className="grid gap-2 rounded-2xl border p-3 md:grid-cols-[1fr_160px_100px_96px_60px]"
                   >
                     <input
                       value={exam.name}
@@ -1571,6 +1649,24 @@ export default function Page() {
                     >
                       あと{days}日
                     </span>
+
+                    <button
+                      onClick={() => {
+                        clearConfirming();
+                        setExams((prev) =>
+                          prev.map((x) =>
+                            x.id === exam.id ? { ...x, passed: !x.passed } : x
+                          )
+                        );
+                      }}
+                      className={`rounded-xl px-3 py-2 text-sm font-bold transition ${
+                        exam.passed
+                          ? "bg-emerald-100 text-emerald-700"
+                          : "bg-slate-100 text-slate-600"
+                      }`}
+                    >
+                      {exam.passed ? "合格済み" : "未合格"}
+                    </button>
 
                     <button
                       onClick={() => {
