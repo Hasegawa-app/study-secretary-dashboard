@@ -714,10 +714,16 @@ export default function Page() {
     : 100;
 
   const hasExamWithin7Days = exams.some((exam) => {
-    const days = Math.ceil(
-      (new Date(exam.date).getTime() - Date.now()) / 1000 / 60 / 60 / 24
-    );
-    return days >= 0 && days <= 7;
+   const days = exam.date
+  ? Math.ceil(
+      (new Date(`${exam.date}T23:59:59`).getTime() - Date.now()) /
+        1000 /
+        60 /
+        60 /
+        24
+    )
+  : null;
+   return days !== null && days <= 7;
   });
 
   const context: AchievementContext = {
@@ -927,19 +933,19 @@ export default function Page() {
     setTasks((prev) => prev.filter((t) => t.id !== id));
   }
 
-  function addExam() {
-    clearConfirming();
+function addExam() {
+  clearConfirming();
 
-    setExams((prev) => [
-      ...prev,
-      {
-        id: uid(),
-        name: "",
-        date: todayKey(),
-        passed: false,
-      },
-    ]);
-  }
+  setExams((prev) => [
+    ...prev,
+    {
+      id: uid(),
+      name: "",
+      date: "",
+      passed: false,
+    },
+  ]);
+}
 
   function resetData() {
     if (!resetConfirming) {
