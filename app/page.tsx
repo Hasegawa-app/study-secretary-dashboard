@@ -376,6 +376,14 @@ const achievements: Achievement[] = [
   condition: (c) => c.examPassedCount >= 1,
 },
   {
+  id: "exam-passed",
+  title: "W合格通知",
+  description: "試験に2つ合格",
+  rarity: "SSR",
+  rewardSrc: "/rewards/exam-passed-2.png",
+  condition: (c) => c.examPassedCount >= 2,
+},
+  {
   id: "imaginary-time",
   title: "そんなことしてる場合？",
   description: "わざとマイナス時間を記録",
