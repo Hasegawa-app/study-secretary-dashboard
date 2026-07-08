@@ -309,6 +309,27 @@ const achievements: Achievement[] = [
 },
 ];
 
+function getTotalMinutesTarget(achievement: Achievement) {
+  const minuteMatch = achievement.description.match(/累計(\d+)分勉強/);
+  if (minuteMatch) return Number(minuteMatch[1]);
+
+  const hourMatch = achievement.description.match(/累計(\d+)時間勉強/);
+  if (hourMatch) return Number(hourMatch[1]) * 60;
+
+  return null;
+}
+
+const totalMinutesAchievements = achievements
+  .map((achievement) => ({
+    achievement,
+    targetMinutes: getTotalMinutesTarget(achievement),
+  }))
+  .filter(
+    (item): item is { achievement: Achievement; targetMinutes: number } =>
+      item.targetMinutes !== null
+  )
+  .sort((a, b) => a.targetMinutes - b.targetMinutes);
+
 const rewardItems = achievements.map((achievement) => ({
   id: achievement.id,
   title: achievement.title,
@@ -555,7 +576,25 @@ export default function Page() {
 
   const doneTasks = tasks.filter((t) => t.done);
   const totalMinutes = doneTasks.reduce((sum, t) => sum + (t.minutes || 0), 0);
-
+  const runningMinutes = timerRunning ? Math.ceil(elapsedSeconds / 60) : 0;
+  const achievementBaseMinutes = totalMinutes + runningMinutes;
+  const nextTotalMinutesAchievement = totalMinutesAchievements.find(
+    (item) => item.targetMinutes > achievementBaseMinutes
+  );
+  const prevTotalMinutesAchievement = [...totalMinutesAchievements]
+    .reverse()
+    .find((item) => item.targetMinutes <= achievementBaseMinutes);
+  const nextAchievementRemainingMinutes = nextTotalMinutesAchievement
+    ? nextTotalMinutesAchievement.targetMinutes - achievementBaseMinutes
+    : 0;
+  const nextAchievementProgress = nextTotalMinutesAchievement
+    ? Math.round(
+        ((achievementBaseMinutes - (prevTotalMinutesAchievement?.targetMinutes ?? 0)) /
+          (nextTotalMinutesAchievement.targetMinutes -
+            (prevTotalMinutesAchievement?.targetMinutes ?? 0))) *
+          100
+      )
+    : 100;
 
   const context: AchievementContext = {
     totalMinutes,
@@ -1114,6 +1153,45 @@ export default function Page() {
               <p>完了タスク：{doneTasks.length}</p>
               <p>学習科目：{context.subjectCount}</p>
             </div>
+
+            <div className="mt-4 rounded-2xl border bg-slate-50 p-3">
+              <p className="text-xs font-bold text-slate-500">次の勉強時間実績</p>
+              {nextTotalMinutesAchievement ? (
+                <>
+                  <div className="mt-1 flex items-center justify-between gap-2">
+                    <p className="font-bold text-slate-900">
+                      {nextTotalMinutesAchievement.achievement.title}
+                    </p>
+                    <span
+                      className={`rounded-full border px-2 py-0.5 text-[11px] font-bold ${rarityClass(
+                        nextTotalMinutesAchievement.achievement.rarity
+                      )}`}
+                    >
+                      {nextTotalMinutesAchievement.achievement.rarity}
+                    </span>
+                  </div>
+                  <p className="mt-1 text-sm text-slate-600">
+                    あと{formatMinutes(nextAchievementRemainingMinutes)}
+                    {timerRunning ? "（タイマー分込み）" : ""}
+                  </p>
+                  <div className="mt-2 h-3 overflow-hidden rounded-full bg-slate-200">
+                    <div
+                      className="h-full rounded-full bg-blue-600 transition-all"
+                      style={{
+                        width: `${Math.min(100, Math.max(0, nextAchievementProgress))}%`,
+                      }}
+                    />
+                  </div>
+                  <p className="mt-1 text-right text-xs text-slate-500">
+                    {Math.min(100, Math.max(0, nextAchievementProgress))}%
+                  </p>
+                </>
+              ) : (
+                <p className="mt-1 text-sm text-slate-600">
+                  勉強時間系の実績は全部解除済み
+                </p>
+              )}
+            </div>
           </section>
 
           <section className="rounded-3xl bg-white p-4 shadow">
@@ -1196,6 +1274,11 @@ export default function Page() {
                 <p className="font-mono text-4xl font-black tabular-nums">
                   {formatTimer(elapsedSeconds)}
                 </p>
+                {nextTotalMinutesAchievement && (
+                  <p className="mt-2 text-xs font-bold text-slate-300">
+                    次の実績まで あと{formatMinutes(nextAchievementRemainingMinutes)}
+                  </p>
+                )}
               </div>
             </div>
 
