@@ -211,13 +211,37 @@ const achievements: Achievement[] = [
     rewardSrc: "/rewards/study-1200.png",
     condition: (c) => c.totalMinutes >= 1200,
   },
+   {
+    id: "study-1500",
+    title: "さらに積み上げる者",
+    description: "累計25時間勉強",
+    rarity: "SR",
+    rewardSrc: "/rewards/study-1500.png",
+    condition: (c) => c.totalMinutes >= 1500,
+  },
   {
     id: "study-1800",
-    title: "さらに積み上げる者",
+    title: "まだまだ積み上げる者",
     description: "累計30時間勉強",
     rarity: "SR",
     rewardSrc: "/rewards/study-1800.png",
     condition: (c) => c.totalMinutes >= 1800,
+  },
+   {
+    id: "study-2100",
+    title: "とことん積み上げる者",
+    description: "累計35時間勉強",
+    rarity: "SR",
+    rewardSrc: "/rewards/study-2100.png",
+    condition: (c) => c.totalMinutes >= 2100,
+  },
+   {
+    id: "study-2400",
+    title: "どこまでも積み上げる者",
+    description: "累計40時間勉強",
+    rarity: "SR",
+    rewardSrc: "/rewards/study-2400.png",
+    condition: (c) => c.totalMinutes >= 2400,
   },
   {
     id: "study-3000",
@@ -437,6 +461,30 @@ function pickRandom(list: string[]) {
   return list[Math.floor(Math.random() * list.length)];
 }
 
+
+const startMessages = [
+  "よし、始めよか。",
+  "今日はここから積んでいこう。",
+  "まずはタイマー押せた時点で勝ち。",
+  "集中タイム、開始。",
+  "短くてもええから一回進めよう。",
+  "記録は未来の君への領収書や。",
+];
+
+function getStartAssistantMessage() {
+  return pickRandom(startMessages);
+}
+
+function getRandomAssistantImage(unlockedRewardIds: string[]) {
+  const unlockedRewardImages = achievements
+    .filter((achievement) => unlockedRewardIds.includes(achievement.id))
+    .map((achievement) => achievement.rewardSrc);
+
+  const candidates = [...assistantImages, ...unlockedRewardImages];
+
+  return candidates[Math.floor(Math.random() * candidates.length)] ?? assistantImages[0];
+}
+
 function getAssistantMessage(task: Task) {
   const minutes = task.minutes || 0;
 
@@ -514,13 +562,13 @@ export default function Page() {
   }
 
   useEffect(() => {
-    setAssistant(
-      assistantImages[Math.floor(Math.random() * assistantImages.length)]
-    );
-
     setTasks(load<Task[]>(TASK_KEY, []));
     setExams(load<Exam[]>(EXAM_KEY, initialExams));
-    setUnlockedRewardIds(load<string[]>(REWARD_KEY, []));
+
+    const loadedUnlockedRewardIds = load<string[]>(REWARD_KEY, []);
+    setUnlockedRewardIds(loadedUnlockedRewardIds);
+    setAssistant(getRandomAssistantImage(loadedUnlockedRewardIds));
+
     setAchievementUnlocks(loadAchievementUnlocks());
     setSubjectStats(load<SubjectStats>(SUBJECT_KEY, {}));
     setHistory(load<History>(HISTORY_KEY, {}));
@@ -661,6 +709,8 @@ export default function Page() {
 
   function startStudyTimer() {
     clearConfirming();
+    setAssistant(getRandomAssistantImage(unlockedRewardIds));
+    setAssistantMessage(getStartAssistantMessage());
     setElapsedSeconds(0);
     setTimerStartedAt(Date.now());
   }
