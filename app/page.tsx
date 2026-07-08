@@ -476,7 +476,7 @@ function normalizeExams(value: unknown): Exam[] {
     .map((exam) => ({
       id: typeof exam.id === "string" ? exam.id : uid(),
       name: typeof exam.name === "string" ? exam.name : "",
-      date: typeof exam.date === "string" ? exam.date : todayKey(),
+      date: typeof exam.date === "string" ? exam.date : "",
       passed: typeof exam.passed === "boolean" ? exam.passed : false,
     }));
 }
@@ -511,6 +511,17 @@ function formatTimer(seconds: number) {
   }
 
   return `${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
+}
+
+function getExamRemainingDays(dateValue: string) {
+  if (!dateValue) return null;
+
+  const examDate = new Date(`${dateValue}T23:59:59`);
+  const time = examDate.getTime();
+
+  if (Number.isNaN(time)) return null;
+
+  return Math.ceil((time - Date.now()) / 1000 / 60 / 60 / 24);
 }
 
 function rarityClass(rarity: Rarity) {
@@ -714,13 +725,8 @@ export default function Page() {
     : 100;
 
   const hasExamWithin7Days = exams.some((exam) => {
-  const examDate = exam.date ? new Date(`${exam.date}T23:59:59`) : null;
-
-const days =
-  examDate && !Number.isNaN(examDate.getTime())
-    ? Math.ceil((examDate.getTime() - Date.now()) / 1000 / 60 / 60 / 24)
-    : null;
-   return days !== null && days <= 7;
+    const days = getExamRemainingDays(exam.date);
+    return days !== null && days >= 0 && days <= 7;
   });
 
   const context: AchievementContext = {
@@ -1596,13 +1602,7 @@ function addExam() {
 
             <div className="space-y-3">
               {exams.map((exam) => {
-                const days = Math.ceil(
-                  (new Date(exam.date).getTime() - Date.now()) /
-                    1000 /
-                    60 /
-                    60 /
-                    24
-                );
+                const days = getExamRemainingDays(exam.date);
 
                 return (
                   <div
@@ -1643,14 +1643,22 @@ function addExam() {
 
                     <span
                       className={`rounded-xl p-2 text-center text-sm ${
-                        days <= 7
+                        days === null
+                          ? "bg-slate-100 text-slate-400"
+                          : days < 0
+                          ? "bg-slate-100 text-slate-500"
+                          : days <= 7
                           ? "bg-red-100 text-red-700"
                           : days <= 30
                           ? "bg-yellow-100 text-yellow-700"
                           : "bg-slate-100"
                       }`}
                     >
-                  {days === null ? "日付未定" : `あと${days}日`}
+                      {days === null
+                        ? "日付未定"
+                        : days < 0
+                        ? "終了"
+                        : `あと${days}日`}
                     </span>
 
                     <button
