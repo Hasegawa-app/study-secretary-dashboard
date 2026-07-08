@@ -372,7 +372,7 @@ const achievements: Achievement[] = [
   title: "合格通知",
   description: "試験に1つ合格",
   rarity: "SSR",
-  rewardSrc: "/rewards/exam-passed.png",
+  rewardSrc: "/rewards/exam-passed-1.png",
   condition: (c) => c.examPassedCount >= 1,
 },
   {
