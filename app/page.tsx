@@ -714,15 +714,12 @@ export default function Page() {
     : 100;
 
   const hasExamWithin7Days = exams.some((exam) => {
-   const days = exam.date
-  ? Math.ceil(
-      (new Date(`${exam.date}T23:59:59`).getTime() - Date.now()) /
-        1000 /
-        60 /
-        60 /
-        24
-    )
-  : null;
+  const examDate = exam.date ? new Date(`${exam.date}T23:59:59`) : null;
+
+const days =
+  examDate && !Number.isNaN(examDate.getTime())
+    ? Math.ceil((examDate.getTime() - Date.now()) / 1000 / 60 / 60 / 24)
+    : null;
    return days !== null && days <= 7;
   });
 
@@ -1653,7 +1650,7 @@ function addExam() {
                           : "bg-slate-100"
                       }`}
                     >
-                      あと{days}日
+                  {days === null ? "日付未定" : `あと${days}日`}
                     </span>
 
                     <button
