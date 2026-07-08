@@ -615,6 +615,7 @@ function getAssistantMessage(task: Task) {
 export default function Page() {
   const [hydrated, setHydrated] = useState(false);
   const [assistant, setAssistant] = useState(assistantImages[0]);
+  const [assistantVisible, setAssistantVisible] = useState(true);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [exams, setExams] = useState<Exam[]>(initialExams);
   const [unlockedRewardIds, setUnlockedRewardIds] = useState<string[]>([]);
@@ -647,6 +648,15 @@ export default function Page() {
   function clearConfirming() {
     setSampleConfirming(false);
     setResetConfirming(false);
+  }
+
+  function changeAssistant(nextImage: string) {
+    setAssistantVisible(false);
+
+    window.setTimeout(() => {
+      setAssistant(nextImage);
+      setAssistantVisible(true);
+    }, 250);
   }
 
   useEffect(() => {
@@ -805,7 +815,7 @@ export default function Page() {
 
   function startStudyTimer() {
     clearConfirming();
-    setAssistant(getRandomAssistantImage(unlockedRewardIds));
+    changeAssistant(getRandomAssistantImage(unlockedRewardIds));
     setAssistantMessage(getStartAssistantMessage());
     setElapsedSeconds(0);
     setTimerStartedAt(Date.now());
@@ -1279,7 +1289,9 @@ function addExam() {
             <img
               src={assistant}
               alt="学習アシスタント"
-              className="h-[430px] w-full object-cover"
+              className={`h-[430px] w-full object-cover transition-all duration-300 ${
+                assistantVisible ? "opacity-100 scale-100" : "opacity-0 scale-105"
+              }`}
             />
             <div className="p-4">
               <h1 className="text-xl font-bold">学習アシスタント</h1>
