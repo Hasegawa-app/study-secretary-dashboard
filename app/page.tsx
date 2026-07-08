@@ -391,6 +391,18 @@ function formatMinutes(minutes: number) {
   return `${h}時間${m}分`;
 }
 
+function formatTimer(seconds: number) {
+  const h = Math.floor(seconds / 3600);
+  const m = Math.floor((seconds % 3600) / 60);
+  const s = seconds % 60;
+
+  if (h > 0) {
+    return `${h}:${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
+  }
+
+  return `${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
+}
+
 function rarityClass(rarity: Rarity) {
   return {
     N: "border-gray-300 bg-gray-50 text-gray-700",
@@ -455,6 +467,12 @@ export default function Page() {
   const [selectedRewardId, setSelectedRewardId] = useState<string | null>(null);
   const [assistantMessage, setAssistantMessage] = useState<string | null>(null);
   const [galleryOpenCount, setGalleryOpenCount] = useState(0);
+
+  const [timerSubject, setTimerSubject] = useState("");
+  const [timerTitle, setTimerTitle] = useState("");
+  const [timerStartedAt, setTimerStartedAt] = useState<number | null>(null);
+  const [elapsedSeconds, setElapsedSeconds] = useState(0);
+  const timerRunning = timerStartedAt !== null;
 
   const [notice, setNotice] = useState<Achievement | null>(null);
   const [noticeQueue, setNoticeQueue] = useState<Achievement[]>([]);
@@ -525,6 +543,16 @@ export default function Page() {
     save(GALLERY_COUNT_KEY, galleryOpenCount);
   }, [hydrated, galleryOpenCount]);
 
+  useEffect(() => {
+    if (!timerRunning || timerStartedAt === null) return;
+
+    const intervalId = window.setInterval(() => {
+      setElapsedSeconds(Math.floor((Date.now() - timerStartedAt) / 1000));
+    }, 1000);
+
+    return () => window.clearInterval(intervalId);
+  }, [timerRunning, timerStartedAt]);
+
   const doneTasks = tasks.filter((t) => t.done);
   const totalMinutes = doneTasks.reduce((sum, t) => sum + (t.minutes || 0), 0);
 
@@ -591,6 +619,48 @@ export default function Page() {
       newTaskSubjectInputRef.current?.focus();
     }, 250);
   }, [hydrated, newTaskId, tasks.length]);
+
+  function startStudyTimer() {
+    clearConfirming();
+    setElapsedSeconds(0);
+    setTimerStartedAt(Date.now());
+  }
+
+  function stopTimerAndRecord() {
+    if (timerStartedAt === null) return;
+
+    clearConfirming();
+
+    const stoppedAt = new Date();
+    const seconds = Math.max(1, Math.floor((Date.now() - timerStartedAt) / 1000));
+    const minutes = Math.max(1, Math.ceil(seconds / 60));
+    const subject = timerSubject.trim() || "未分類";
+    const title = timerTitle.trim() || "タイマー学習";
+
+    const task: Task = {
+      id: uid(),
+      subject,
+      title,
+      minutes,
+      done: true,
+      createdAt: stoppedAt.toISOString(),
+    };
+
+    setTasks((prev) => [...prev, task]);
+    applyStudyDiff(subject, task.createdAt.slice(0, 10), minutes);
+    setAssistantMessage(getAssistantMessage(task));
+    flashCompletedTask(task.id);
+
+    setTimerStartedAt(null);
+    setElapsedSeconds(0);
+    setTimerTitle("");
+  }
+
+  function resetStudyTimer() {
+    clearConfirming();
+    setTimerStartedAt(null);
+    setElapsedSeconds(0);
+  }
 
   function addTask() {
     clearConfirming();
@@ -1113,6 +1183,68 @@ export default function Page() {
         </aside>
 
         <div className="space-y-6">
+          <section className="rounded-3xl bg-white p-5 shadow">
+            <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+              <div>
+                <p className="text-sm font-bold text-blue-600">STUDY TIMER</p>
+                <h2 className="text-2xl font-black">勉強タイマー</h2>
+                <p className="mt-1 text-sm text-slate-500">開始して、止めたらそのまま記録に追加します。</p>
+              </div>
+
+              <div className="rounded-3xl bg-slate-900 px-6 py-4 text-center text-white shadow-lg">
+                <p className="text-xs font-bold tracking-[0.25em] text-slate-300">TIME</p>
+                <p className="font-mono text-4xl font-black tabular-nums">
+                  {formatTimer(elapsedSeconds)}
+                </p>
+              </div>
+            </div>
+
+            <div className="mt-5 grid gap-3 md:grid-cols-[1fr_2fr]">
+              <input
+                list="subject-suggestions"
+                value={timerSubject}
+                onChange={(e) => setTimerSubject(e.target.value)}
+                disabled={timerRunning}
+                placeholder="科目（空なら未分類）"
+                className="rounded-2xl border p-4 text-lg disabled:bg-slate-100"
+              />
+
+              <input
+                value={timerTitle}
+                onChange={(e) => setTimerTitle(e.target.value)}
+                disabled={timerRunning}
+                placeholder="内容（空ならタイマー学習）"
+                className="rounded-2xl border p-4 text-lg disabled:bg-slate-100"
+              />
+            </div>
+
+            <div className="mt-4 grid gap-3 md:grid-cols-[1fr_1fr_120px]">
+              <button
+                onClick={startStudyTimer}
+                disabled={timerRunning}
+                className="rounded-3xl bg-blue-600 px-6 py-5 text-xl font-black text-white shadow-lg transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-slate-300"
+              >
+                ▶ 勉強開始
+              </button>
+
+              <button
+                onClick={stopTimerAndRecord}
+                disabled={!timerRunning}
+                className="rounded-3xl bg-emerald-600 px-6 py-5 text-xl font-black text-white shadow-lg transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:bg-slate-300"
+              >
+                ■ 停止して記録
+              </button>
+
+              <button
+                onClick={resetStudyTimer}
+                disabled={!timerRunning && elapsedSeconds === 0}
+                className="rounded-3xl bg-slate-100 px-4 py-5 text-sm font-bold text-slate-700 transition hover:bg-slate-200 disabled:cursor-not-allowed disabled:text-slate-300"
+              >
+                リセット
+              </button>
+            </div>
+          </section>
+
           <section className="rounded-3xl bg-white p-5 shadow">
             <h2 className="text-xl font-bold">タスク</h2>
 
