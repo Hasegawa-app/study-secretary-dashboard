@@ -376,7 +376,7 @@ const achievements: Achievement[] = [
   condition: (c) => c.examPassedCount >= 1,
 },
   {
-  id: "exam-passed",
+  id: "two-exam-passed",
   title: "W合格通知",
   description: "試験に2つ合格",
   rarity: "SSR",
